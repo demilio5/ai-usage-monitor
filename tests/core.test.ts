@@ -347,3 +347,16 @@ it('distinguishes exhausted, zero consumption, insufficient, and stale forecast 
     forecastText(forecast(series([20, 30, 40]), 'claude', { ...q, remaining: 0 }, 3, now)),
   ).toBe('Allowance exhausted');
 });
+
+it('uses valid manual samples even when the automatic refresh interval exceeds lookback', () => {
+  expect(forecast(series([20, 30, 40]), 'claude', q, 3, now, undefined, 1440).rate).toBe(40);
+});
+it('reports exhausted current quotas without requiring samples or a rising trend', async () => {
+  const { forecastText } = await import('../src/calculations/forecasting');
+  const exhausted = { ...q, used: 100, remaining: 0 };
+  for (const points of [[], series([100, 100, 100])])
+    expect(forecastText(forecast(points, 'claude', exhausted, 3, now))).toBe('Allowance exhausted');
+  expect(
+    forecast([], 'claude', { ...exhausted, resetAt: now - 1 }, 3, now).exhaustionMs,
+  ).toBeNull();
+});

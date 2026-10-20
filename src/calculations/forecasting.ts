@@ -21,13 +21,14 @@ export function forecast(
     rate: null,
     exhaustionMs: null,
     usedAtReset: null,
-    message: 'Insufficient data',
+    message:
+      hours * 60 < interval * 2 ? 'Refresh too infrequent for lookback' : 'Insufficient data',
     samples: 0,
   };
   if (q.resetAt !== null && q.resetAt <= now) return unavailable;
-  // Preserve the selected lookback; explain combinations that cannot hold three polls.
-  if (hours * 60 < interval * 2)
-    return { ...unavailable, message: 'Refresh too infrequent for lookback' };
+  if (q.remaining === 0) return { ...unavailable, exhaustionMs: 0, message: 'Allowance exhausted' };
+  // Keep the selected lookback. Manual readings may still provide enough samples
+  // when the automatic interval would otherwise be too long.
   const cadence = idleAware ? Math.max(60, interval) : interval;
   let points = history
     .filter(
