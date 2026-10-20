@@ -1,5 +1,6 @@
 import type { Observation } from '../providers/types';
 import { el } from './dom';
+import { sameResetCycle } from '../calculations/quota';
 export function chart(points: Observation[], days: number, now = Date.now()): HTMLElement {
   const box = el('div', 'chart');
   const ns = 'http://www.w3.org/2000/svg';
@@ -26,7 +27,7 @@ export function chart(points: Observation[], days: number, now = Date.now()): HT
       y = 90 - p.remaining * 0.8;
     const gap =
       !previous ||
-      previous.resetAt !== p.resetAt ||
+      !sameResetCycle(previous.resetAt, p.resetAt) ||
       p.timestamp - previous.timestamp > 3600000 ||
       p.account !== previous.account;
     d += `${gap ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)} `;

@@ -360,3 +360,30 @@ it('reports exhausted current quotas without requiring samples or a rising trend
     forecast([], 'claude', { ...exhausted, resetAt: now - 1 }, 3, now).exhaustionMs,
   ).toBeNull();
 });
+
+it('keeps forecast samples from the same reset cycle despite Claude subsecond timestamp jitter', () => {
+  const points = series([20, 30, 40]);
+  const offsets = [437, -183, 445];
+  points.forEach((p, i) => {
+    p.resetAt = q.resetAt! + offsets[i];
+  });
+  const result = forecast(points, 'claude', { ...q, resetAt: q.resetAt! + 445 }, 3, now);
+  expect(result.samples).toBe(3);
+  expect(result.rate).toBe(40);
+  expect(result.exhaustionMs).toBe(5400000);
+  expect(points[0].resetAt).toBe(q.resetAt! + 437);
+});
+it('keeps actual resets, missing reset times, and account boundaries separate with timestamp tolerance', async () => {
+  const { sameResetCycle } = await import('../src/calculations/quota');
+  expect(sameResetCycle(now, now + 2000)).toBe(true);
+  expect(sameResetCycle(now, now + 2001)).toBe(false);
+  expect(sameResetCycle(null, null)).toBe(true);
+  expect(sameResetCycle(null, now)).toBe(false);
+  expect(
+    forecast(series([20, 30, 40], q.resetAt! - 18000000), 'claude', q, 3, now).rate,
+  ).toBeNull();
+  expect(forecast(series([20, 30, 40], null), 'claude', q, 3, now).rate).toBeNull();
+  expect(
+    forecast(series([20, 30, 40], q.resetAt! + 100), 'claude', q, 3, now, 'other-account').rate,
+  ).toBeNull();
+});

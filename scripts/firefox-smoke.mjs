@@ -145,6 +145,7 @@ try {
             timestamp: now - (2 - i) * 900000,
             used,
             remaining: 100 - used,
+            resetAt: q.resetAt + [437, -183, 445][i],
           }));
           await browser.storage.local.set({ monitor: s });
           done();
@@ -234,7 +235,11 @@ try {
         const weekly = s.providers.claude.quotas[1];
         weekly.used = 28;
         weekly.remaining = 72;
-        s.history = s.history.map((p) => ({ ...p, id: weekly.id, resetAt: weekly.resetAt }));
+        s.history = s.history.map((p, i) => ({
+          ...p,
+          id: weekly.id,
+          resetAt: weekly.resetAt + [437, -183, 445][i],
+        }));
         await browser.storage.local.set({ monitor: s });
         done();
       }),
@@ -259,6 +264,14 @@ try {
   await run('history graphs and range selector are available in settings', async () => {
     await driver.get(`moz-extension://${uuid}/options.html#history`);
     await driver.wait(until.elementLocated(By.css('.chart svg')), 10000);
+    assert.ok(
+      await driver.executeScript(() =>
+        [...document.querySelectorAll('.chart svg path')].some((path) =>
+          path.getAttribute('d').includes('L'),
+        ),
+      ),
+      'Reset timestamp jitter must not split every history point into a separate path',
+    );
     await driver
       .findElement(By.css('select[aria-label="History time range"] option[value="7"]'))
       .click();

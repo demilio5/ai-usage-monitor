@@ -31,6 +31,11 @@ export function quota(
 export function current(q: Quota, now = Date.now()): boolean {
   return q.resetAt === null || q.resetAt > now;
 }
+// Claude reports subsecond jitter around the same reset instant. Keep the
+// original timestamps for display, but do not treat this as a new allowance cycle.
+export function sameResetCycle(a: number | null, b: number | null): boolean {
+  return a === b || (a !== null && b !== null && Math.abs(a - b) <= 2000);
+}
 export function color(remaining: number | null): string {
   return remaining === null
     ? '#78858d'

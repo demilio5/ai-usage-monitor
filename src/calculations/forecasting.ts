@@ -1,5 +1,6 @@
 import type { Observation, Quota, ProviderId } from '../providers/types';
 import { duration } from '../utils/time';
+import { sameResetCycle } from './quota';
 export interface Forecast {
   rate: number | null;
   exhaustionMs: number | null;
@@ -37,7 +38,7 @@ export function forecast(
         p.id === q.id &&
         p.account === account &&
         p.status === 'ok' &&
-        p.resetAt === q.resetAt &&
+        sameResetCycle(p.resetAt, q.resetAt) &&
         p.timestamp >= now - hours * 3600000 &&
         p.timestamp <= now,
     )
