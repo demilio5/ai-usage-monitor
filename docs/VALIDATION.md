@@ -36,3 +36,27 @@ Version 1.0.3 increases toolbar numeral height from 5 to 7 pixels, removes the t
 Version 1.0.4 pins the Claude toolbar value to seven_day (shared Claude/Claude Code weekly allowance) in dual-row, single-Claude and automatic badge modes. It never substitutes five_hour or a weekly model-specific sub-cap if the overall weekly quota is absent. An expired five-hour window cannot hide a still-current weekly toolbar reading. Codex selection is unchanged.
 
 Version 1.0.5 shows a local calendar reset date followed by total hours and minutes remaining in each compact popup quota row. Hover exposes the exact date/time/timezone. Missing reset timestamps remain unavailable; expired dates show Awaiting update. Regression tests cover DST, local midnight, year changes, invalid dates and minute rounding.
+
+## Audit implementation verified on 2026-10-20
+
+Baseline commit: `549eaf3`. Each implementation batch has a separate commit:
+
+| Commit    | Change                                                                                                                                                                |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `e903441` | Preserve Claude cooldown across organization changes; repair sign-in guidance; remove two unused imports and enable compiler unused checks.                           |
+| `bf80533` | Serve cached reads without waiting for collection; skip unchanged storage writes while retaining toolbar clock updates and retention cleanup.                         |
+| `1a09a45` | Evaluate expired quotas independently; share forecast text; suppress stale forecasts in settings; account for hourly idle samples and explain incompatible lookbacks. |
+| `b2ad642` | Validate stored sections, preserve valid records and cooldowns, and test a full 18,000-observation history.                                                           |
+| `55ac1d0` | Derive package filenames and UI versions from metadata; reject package/manifest version mismatches before building.                                                   |
+| `c1303b8` | Preserve valid manual samples with long automatic intervals and report exhausted allowances without requiring a consumption trend.                                    |
+
+Validation after implementation:
+
+- 93 tests pass across four suites; strict typecheck includes unused locals and parameters.
+- Build and Mozilla validation pass with zero errors, warnings, or notices.
+- Nine isolated Firefox 158.0 smoke checks pass, including mixed expired/current quotas, stale forecast suppression, reset dates, and popup height/width constraints.
+- Formatting, Git whitespace checks, package/source version agreement, archive exclusions, and source inclusion checks pass.
+- No dependencies, permissions, CSS, provider endpoints, or UI layouts were changed.
+- One initial cached-read batch was rolled back after a Firefox startup readiness check failed. It was reapplied with explicit toolbar readiness; the newly added quota DOM assertions also read an atomic snapshot to avoid stale-element races. Final checks pass.
+
+Remaining limits: daily scheduled polling cannot produce three observations within the maximum 24-hour forecast lookback. This now has an explicit diagnostic; the selected lookback is never silently widened, and sufficient manual samples remain usable. Mutations remain serialized with collection to prevent lost updates; cached reads are independent. Live account authentication, OS idle/lock detection, OS notification delivery, and physical toolbar readability still require the manual acceptance checks above. The rebuilt 1.0.5 package is unsigned; no new Mozilla submission was made during this audit work.
