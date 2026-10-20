@@ -178,3 +178,21 @@ it('generates an HTTPS update feed tied to the exact add-on ID, artifact hash, a
   });
   expect(() => updateFeed(manifest, 'invalid repo', 'a'.repeat(64))).toThrow();
 });
+
+it('reports actionable Mozilla field errors with credentials redacted', async () => {
+  const request = mozillaClient({
+    issuer: 'fixture-issuer',
+    secret: 'fixture-secret',
+    fetcher: async () =>
+      new Response(
+        JSON.stringify({
+          source: ['Bad archive fixture-secret'],
+          license: ['fixture-issuer is invalid'],
+        }),
+        { status: 400 },
+      ),
+  });
+  await expect(request('addons/upload/')).rejects.toThrow('source');
+  await expect(request('addons/upload/')).rejects.not.toThrow('fixture-secret');
+  await expect(request('addons/upload/')).rejects.not.toThrow('fixture-issuer');
+});

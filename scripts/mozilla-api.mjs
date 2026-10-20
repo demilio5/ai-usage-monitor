@@ -25,8 +25,36 @@ export function mozillaClient({ issuer, secret, fetcher = fetch }) {
     }
     if (allowMissing && response.status === 404) return null;
     if (!response.ok) {
+      let details = '';
+      try {
+        const body = await response.json();
+        const fields = Object.fromEntries(
+          [
+            'upload',
+            'source',
+            'license',
+            'approval_notes',
+            'compatibility',
+            'version',
+            'detail',
+            'non_field_errors',
+          ]
+            .filter((key) => body[key] !== undefined)
+            .map((key) => [key, body[key]]),
+        );
+        details = JSON.stringify(fields)
+          .replaceAll(secret, '[redacted]')
+          .replaceAll(issuer, '[redacted]')
+          .replace(
+            /[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
+            '[redacted-token]',
+          )
+          .slice(0, 1200);
+      } catch {
+        /* Only static status is reported for malformed error bodies. */
+      }
       const error = new Error(
-        `Mozilla API returned HTTP ${response.status}; check Developer Hub for details.`,
+        `Mozilla API returned HTTP ${response.status}${details && details !== '{}' ? `: ${details}` : '; check Developer Hub for details.'}`,
       );
       error.status = response.status;
       throw error;
