@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { createHash, createHmac } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { zipSync, strToU8 } from 'fflate';
 import { createJwt, mozillaClient } from '../scripts/mozilla-api.mjs';
 import { signRelease } from '../scripts/sign-mozilla.mjs';
@@ -97,6 +98,13 @@ it('resumes an approved ordinary unlisted version without uploading it twice', a
   expect(await signRelease(options)).toEqual(signed);
   expect(options.request).toHaveBeenCalledTimes(2);
   expect(options.fetcher.mock.calls[0][1].headers).toBeUndefined();
+});
+it('keeps reviewer notes within the Mozilla limit and rejects oversized notes before requests', async () => {
+  const notes = await readFile(new URL('../docs/AMO_REVIEWER_NOTES.md', import.meta.url), 'utf8');
+  expect(notes.length).toBeLessThanOrEqual(3000);
+  const options = { ...signingOptions(), notes: 'x'.repeat(3001) };
+  await expect(signRelease(options)).rejects.toThrow('3000-character');
+  expect(options.request).not.toHaveBeenCalled();
 });
 it.each(['00000000-0000-4000-8000-000000000001', '00000000000040008000000000000001'])(
   'uploads sources and verifies signing with either Mozilla UUID format: %s',

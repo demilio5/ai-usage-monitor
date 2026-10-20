@@ -16,6 +16,8 @@ export async function signRelease({
   timeout = 900000,
   log = console.log,
 }) {
+  if (notes.length > 3000)
+    throw new Error('Mozilla reviewer notes exceed the 3000-character submission limit.');
   if (
     manifest.browser_specific_settings.gecko.id !== config.addonId ||
     manifest.browser_specific_settings.gecko.update_url !== config.updateUrl
