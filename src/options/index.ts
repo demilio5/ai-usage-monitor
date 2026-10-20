@@ -1,6 +1,8 @@
 import { chart } from '../ui/chart';
-import { forecast } from '../calculations/forecasting';
-import { countdown, duration } from '../utils/time';
+import { forecast, forecastText } from '../calculations/forecasting';
+import { stale } from '../background/scheduler';
+import { current } from '../calculations/quota';
+import { countdown } from '../utils/time';
 import { PROVIDERS, NAMES, type Store, type Settings } from '../providers/types';
 import { el, button, theme, download } from '../ui/dom';
 import { exportCSV } from '../storage/history';
@@ -51,15 +53,19 @@ function render() {
     readings.append(el('h3', '', NAMES[id]), el('p', 'muted', `${p.status} · ${p.detail}`));
     for (const q of p.quotas) {
       const row = el('div', 'reading-window');
-      const f = forecast(
-        state.history,
-        id,
-        q,
-        state.settings.forecastHours,
-        Date.now(),
-        p.account,
-        state.settings.interval,
-      );
+      const f =
+        stale(p, state.settings) || !current(q)
+          ? null
+          : forecast(
+              state.history,
+              id,
+              q,
+              state.settings.forecastHours,
+              Date.now(),
+              p.account,
+              state.settings.interval,
+              state.settings.idleAware,
+            );
       row.append(
         el(
           'p',
@@ -70,9 +76,9 @@ function render() {
         el(
           'p',
           'muted',
-          f.rate && f.rate > 0
-            ? `Estimated time left ${duration(f.exhaustionMs)} · ${f.rate.toFixed(1)}%/h · ${f.message}${f.usedAtReset === null ? '' : ` Estimated consumption at reset ${f.usedAtReset.toFixed(0)}%.`}`
-            : `Forecast: ${f.message}`,
+          f && f.rate !== null && f.rate > 0
+            ? `${forecastText(f)} · ${f.message}${f.usedAtReset === null ? '' : ` Estimated consumption at reset ${f.usedAtReset.toFixed(0)}%.`}`
+            : forecastText(f),
         ),
       );
       readings.append(row);

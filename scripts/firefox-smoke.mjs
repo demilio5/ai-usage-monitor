@@ -188,6 +188,35 @@ try {
     await driver.findElement(By.css('body')).takeScreenshot(),
     'base64',
   );
+  await run('expired short window leaves current weekly readings and forecast usable', async () => {
+    await script((done) =>
+      browser.runtime.sendMessage({ type: 'read' }).then(async (s) => {
+        s.providers.claude.quotas[0].resetAt = Date.now() - 1000;
+        const weekly = s.providers.claude.quotas[1];
+        weekly.used = 28;
+        weekly.remaining = 72;
+        s.history = s.history.map((p) => ({ ...p, id: weekly.id, resetAt: weekly.resetAt }));
+        await browser.storage.local.set({ monitor: s });
+        done();
+      }),
+    );
+    await driver.get(`moz-extension://${uuid}/popup.html`);
+    await driver.wait(until.elementLocated(By.css('.claude progress')), 10000);
+    // Read one DOM snapshot: refresh replaces nodes while this page is opening.
+    const snapshot = await driver.wait(
+      () =>
+        driver.executeScript(() => {
+          const summary = document.querySelector('.claude .compact-detail')?.textContent;
+          if (!summary?.includes('40.0%/h')) return false;
+          return [...document.querySelectorAll('.claude progress')].map((meter) =>
+            meter.getAttribute('aria-label'),
+          );
+        }),
+      10000,
+    );
+    assert.match(snapshot[0], /stale/);
+    assert.doesNotMatch(snapshot[1], /stale/);
+  });
   await run('history graphs and range selector are available in settings', async () => {
     await driver.get(`moz-extension://${uuid}/options.html#history`);
     await driver.wait(until.elementLocated(By.css('.chart svg')), 10000);
@@ -200,6 +229,20 @@ try {
         .getAttribute('value'),
       '7',
     );
+  });
+  await run('settings suppress forecasts after authentication fails', async () => {
+    await script((done) =>
+      browser.runtime.sendMessage({ type: 'read' }).then(async (s) => {
+        s.providers.claude.status = 'auth';
+        await browser.storage.local.set({ monitor: s });
+        done();
+      }),
+    );
+    await driver.get(`moz-extension://${uuid}/options.html`);
+    await driver.wait(until.elementLocated(By.css('#readings')), 10000);
+    const readings = await driver.findElement(By.css('#readings')).getText();
+    assert.match(readings, /Last known readings · stale/);
+    assert.doesNotMatch(readings, /40.0%\/h/);
   });
   await run('history clear requires confirmation and clears observations', async () => {
     await driver.get(`moz-extension://${uuid}/options.html`);

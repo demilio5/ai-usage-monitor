@@ -302,3 +302,48 @@ it('keeps unavailable and expired reset times honest', async () => {
   expect(resetDisplay(now - 1, now).remaining).toBe('Awaiting update');
   expect(resetDisplay(now + 30000, now).remaining).toBe('0h 1m left');
 });
+
+it('keeps a current weekly reading usable when a different quota has expired', () => {
+  const s = ready();
+  s.providers.claude.quotas.push({ ...q, resetAt: now - 1 });
+  expect(stale(s.providers.claude, s.settings, now)).toBe(false);
+  s.providers.claude.quotas[0].resetAt = now - 1;
+  expect(stale(s.providers.claude, s.settings, now)).toBe(true);
+});
+it('handles hourly idle samples without bridging unrelated gaps in normal mode', () => {
+  const weekly = { ...q, resetAt: now + 86400000 };
+  const points = series([20, 30, 40], weekly.resetAt, 3600000);
+  expect(forecast(points, 'claude', weekly, 3, now, undefined, 5, true).rate).toBe(10);
+  expect(forecast(points, 'claude', weekly, 3, now, undefined, 5, false).rate).toBeNull();
+});
+it('explains incompatible long refresh and lookback settings without extending lookback', () => {
+  const weekly = { ...q, resetAt: now + 7 * 86400000 };
+  for (const interval of [720, 1440]) {
+    const points = series([20, 30, 40], weekly.resetAt, interval * 60000);
+    expect(forecast(points, 'claude', weekly, 3, now, undefined, interval).message).toContain(
+      'Refresh too infrequent',
+    );
+  }
+  const daily = forecast(
+    series([20, 30, 40], weekly.resetAt, 86400000),
+    'claude',
+    weekly,
+    24,
+    now,
+    undefined,
+    1440,
+  );
+  expect(daily.rate).toBeNull();
+  expect(daily.message).toContain('Refresh too infrequent');
+});
+it('distinguishes exhausted, zero consumption, insufficient, and stale forecast messages', async () => {
+  const { forecastText } = await import('../src/calculations/forecasting');
+  expect(forecastText(null)).toContain('stale');
+  expect(forecastText(forecast([], 'claude', q, 3, now))).toBe('Forecast: insufficient data');
+  expect(forecastText(forecast(series([40, 40, 40]), 'claude', q, 3, now))).toBe(
+    'Forecast: no consumption observed',
+  );
+  expect(
+    forecastText(forecast(series([20, 30, 40]), 'claude', { ...q, remaining: 0 }, 3, now)),
+  ).toBe('Allowance exhausted');
+});

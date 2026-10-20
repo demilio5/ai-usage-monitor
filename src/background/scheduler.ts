@@ -1,10 +1,11 @@
 import type { ProviderData, Settings } from '../providers/types';
+import { current } from '../calculations/quota';
 export function stale(p: ProviderData, settings: Settings, now = Date.now()): boolean {
   return (
     p.status !== 'ok' ||
     p.lastSuccess === null ||
     now - p.lastSuccess > Math.max(settings.interval * 120000, 120000) ||
-    p.quotas.some((q) => q.resetAt !== null && q.resetAt <= now)
+    (p.quotas.length > 0 && p.quotas.every((q) => !current(q, now)))
   );
 }
 export function nextRetry(

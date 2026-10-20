@@ -18,7 +18,7 @@ export function selectQuota(
     (id) => settings.enabled[id] && (settings.badge === 'auto' || settings.badge === id),
   ).flatMap((id) => {
     const p = providers[id];
-    return stale({ ...p, quotas: [] }, settings, now)
+    return stale(p, settings, now)
       ? []
       : p.quotas
           .filter((q) => current(q, now) && (id !== 'claude' || q.id === 'seven_day'))

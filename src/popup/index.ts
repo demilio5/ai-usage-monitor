@@ -1,9 +1,9 @@
 import { PROVIDERS, NAMES, type Store } from '../providers/types';
 import { el, button, theme } from '../ui/dom';
-import { color } from '../calculations/quota';
+import { color, current } from '../calculations/quota';
 import { stale } from '../background/scheduler';
-import { age, resetDisplay, duration } from '../utils/time';
-import { forecast } from '../calculations/forecasting';
+import { age, resetDisplay } from '../utils/time';
+import { forecast, forecastText } from '../calculations/forecasting';
 let state: Store;
 let busy = false;
 let connectionError = '';
@@ -68,15 +68,16 @@ function render() {
       card.append(columns);
     }
     for (const q of visible) {
+      const quotaStale = isStale || !current(q);
       const row = el('div', 'compact-quota');
       const name = el('span', 'quota-label', q.label.replace(' allowance', ''));
       const meter = el('progress');
       meter.max = 100;
       meter.value = q.remaining;
-      meter.style.setProperty('--quota-color', isStale ? '#78858d' : color(q.remaining));
+      meter.style.setProperty('--quota-color', quotaStale ? '#78858d' : color(q.remaining));
       meter.setAttribute(
         'aria-label',
-        `${q.remaining.toFixed(1)}% remaining${isStale ? ', stale' : ''}`,
+        `${q.remaining.toFixed(1)}% remaining${quotaStale ? ', stale' : ''}`,
       );
       const amount = el('strong', '', `${Math.round(q[state.settings.display])}%`);
       amount.title = `${state.settings.display} · ${q.used.toFixed(1)}% reported used · ${q.remaining.toFixed(1)}% calculated remaining`;
@@ -114,24 +115,24 @@ function render() {
       card.append(detail);
     }
     if (p.quotas.length) {
-      const limiting = p.quotas.reduce((a, b) => (a.remaining < b.remaining ? a : b));
-      const f = isStale
-        ? null
-        : forecast(
-            state.history,
-            id,
-            limiting,
-            state.settings.forecastHours,
-            Date.now(),
-            p.account,
-            state.settings.interval,
-          );
-      const summary = isStale
-        ? 'Last known readings · stale'
-        : f?.rate && f.rate > 0
-          ? `Estimated time left ${duration(f.exhaustionMs)} · ${f.rate.toFixed(1)}%/h`
-          : 'Forecast: insufficient data';
-      const line = el('p', 'compact-detail muted', summary);
+      const active = p.quotas.filter((q) => current(q));
+      const limiting = (active.length ? active : p.quotas).reduce((a, b) =>
+        a.remaining < b.remaining ? a : b,
+      );
+      const f =
+        isStale || !current(limiting)
+          ? null
+          : forecast(
+              state.history,
+              id,
+              limiting,
+              state.settings.forecastHours,
+              Date.now(),
+              p.account,
+              state.settings.interval,
+              state.settings.idleAware,
+            );
+      const line = el('p', 'compact-detail muted', forecastText(f));
       line.title = f
         ? `${limiting.label}: ${f.message}${f.usedAtReset === null ? '' : ` Estimated used at reset: ${f.usedAtReset.toFixed(0)}%.`} Reported consumption; remaining is calculated.`
         : p.detail;
