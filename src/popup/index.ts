@@ -13,20 +13,27 @@ async function details(anchor = '') {
 }
 function render() {
   theme(state.settings.theme);
+  document.body.classList.toggle(
+    'all-providers',
+    PROVIDERS.every((id) => state.settings.enabled[id]),
+  );
   app.replaceChildren();
-  const header = el('header', 'spread');
-  const brand = el('div');
+  const header = el('header', 'spread popup-header');
+  const brand = el('div', 'brand');
   brand.append(el('h1', '', 'AI Usage Monitor'));
+  brand.append(el('span', 'local', '● Local only'));
   const settings = button('⚙', () => browser.runtime.openOptionsPage(), 'icon-button');
   settings.setAttribute('aria-label', 'Open settings');
-  header.append(brand, settings);
-  app.append(header);
-  const intro = el('div', 'spread intro');
-  intro.append(
-    el('span', 'local', '● Local only'),
-    button(busy ? 'Refreshing…' : '↻ Refresh', () => refresh(true), 'quiet'),
+  const actions = el('div', 'spread header-actions');
+  const refreshButton = button(
+    busy ? 'Refreshing…' : '↻ Refresh',
+    () => refresh(true),
+    'refresh-button',
   );
-  app.append(intro);
+  refreshButton.disabled = busy;
+  actions.append(refreshButton, settings);
+  header.append(brand, actions);
+  app.append(header);
   if (connectionError) app.append(el('p', 'warning', connectionError));
   let enabled = 0;
   for (const id of PROVIDERS) {
@@ -45,7 +52,7 @@ function render() {
       title,
       el(
         'span',
-        `status ${isStale ? 'muted' : 'connected'}`,
+        `status ${!isStale && p.status === 'ok' ? 'connected' : 'muted'}`,
         p.status === 'ok' ? (isStale ? 'Stale' : 'Connected') : p.status.replaceAll('-', ' '),
       ),
     );
@@ -56,14 +63,11 @@ function render() {
     );
     const visible = (standard.length ? standard : p.quotas).slice(0, 2);
     if (visible.length) {
-      const columns = el('div', 'spread muted quota-columns');
+      const columns = el('div', 'muted quota-columns');
       columns.append(
-        el(
-          'span',
-          '',
-          state.settings.display === 'used' ? 'Allowance · used %' : 'Allowance · remaining %',
-        ),
-        el('span', '', 'Reset date · time left'),
+        el('span', '', 'Window'),
+        el('span', '', state.settings.display === 'used' ? 'Used' : 'Remaining'),
+        el('span', '', 'Resets · time left'),
       );
       card.append(columns);
     }
@@ -133,6 +137,7 @@ function render() {
               state.settings.idleAware,
             );
       const line = el('p', 'compact-detail muted', forecastText(f));
+      line.classList.add('forecast-summary');
       line.title = f
         ? `${limiting.label}: ${f.message}${f.usedAtReset === null ? '' : ` Estimated used at reset: ${f.usedAtReset.toFixed(0)}%.`} Reported consumption; remaining is calculated.`
         : p.detail;
@@ -153,7 +158,7 @@ function render() {
   const footer = el('footer', 'spread');
   footer.append(
     button('History & forecasts ↗', () => details('#history'), 'quiet'),
-    el('span', 'muted', `v${browser.runtime.getManifest().version} · remaining bars`),
+    el('span', 'muted', `v${browser.runtime.getManifest().version}`),
   );
   app.append(footer);
 }

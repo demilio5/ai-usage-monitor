@@ -221,6 +221,7 @@ try {
     }));
     assert.equal(sizes.width, 520);
     assert.ok(sizes.date >= 12 && sizes.time >= 11 && sizes.percent >= 16);
+    console.log('Light popup dimensions', sizes);
     assert.ok(sizes.height <= 580);
     await writeFile(
       'artifacts/firefox-popup-readable-light.png',

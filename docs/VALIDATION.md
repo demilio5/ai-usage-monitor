@@ -70,3 +70,9 @@ Version 1.0.7 adds an HTTPS update feed, a local signing/publishing command usin
 117 unit/integration tests, strict TypeScript, build and self-hosted Mozilla validation pass. Ten isolated Firefox UI checks cover readable text, popup sizing and Claude reset jitter in forecasts/graphs. Mozilla approved and signed the unlisted version. Firefox 158 accepted the signed XPI with permanent installation enabled in a disposable profile with provider traffic blocked. The public GitHub release download matches Mozilla SHA-256 `88dbfa2ebda5cb17bedd9a05b7464bb9b2691f004c3ab3308514e84ec142e1bc`.
 
 The release pipeline authenticates only the initial Mozilla API download, strips authorization from CDN requests, tolerates manifest JSON formatting while comparing all values, and checks other original files byte-for-byte. Regression tests cover these cases. Version 1.0.7 includes the HTTPS update URL; older installations need one manual signed update before future feed updates work. Live-account forecasts and OS behavior retain the manual acceptance limits described above.
+
+## Popup refinement for version 1.0.8
+
+Scoped popup styling adds neutral light/dark surfaces, aligned column labels, 18px numeric readings, 13px reset dates, 12px countdowns, connection pills and distinct forecast summaries. Refresh and Settings share the header; the footer retains history access and version information. All three enabled services use compact spacing to preserve the no-scroll requirement. Provider collection and forecast calculations are unchanged.
+
+Validation: 117 automated tests, strict TypeScript, build and self-hosted Mozilla validation pass. All ten Firefox checks pass; populated light two-service layout measures 520 x 576.8px and dark three-service layout 520 x 579px, including extra caps. Both screenshots were visually inspected. Early spacing variants exceeded the height budget and were revised before release.
