@@ -1,4 +1,4 @@
-import { PROVIDERS, NAMES, type Store, type ProviderId } from '../providers/types';
+import { PROVIDERS, NAMES, type Store } from '../providers/types';
 import { el, button, theme } from '../ui/dom';
 import { color } from '../calculations/quota';
 import { stale } from '../background/scheduler';
@@ -107,7 +107,7 @@ function render() {
         id === 'chatgpt'
           ? 'Overall quota unavailable'
           : p.status === 'auth'
-            ? `Sign in at , then refresh`
+            ? `Sign in at ${id === 'claude' ? 'claude.ai' : 'chatgpt.com'}, then refresh`
             : p.detail,
       );
       detail.title = p.detail;

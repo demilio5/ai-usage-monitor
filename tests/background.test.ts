@@ -1,5 +1,4 @@
 import { it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { emptyStore } from '../src/storage/settings';
 import type { Store } from '../src/providers/types';
 const now = Date.parse('2026-10-19T19:00:00Z');
 let saved: Store | undefined;
@@ -215,6 +214,27 @@ it('persists Codex quota metadata but never session credentials or account profi
   expect(s.providers.codex.quotas[0].remaining).toBe(62);
   expect(JSON.stringify(saved)).not.toMatch(/credential-fixture-only|private-fixture/);
   expect(s.providers.codex.account).toBe('test-account');
+});
+it('keeps Retry-After when switching Claude organizations and resumes after it expires', async () => {
+  vi.setSystemTime(now + 60000);
+  fetcher.mockResolvedValue(response({}, 429, { 'retry-after': '7200' }));
+  let s = await send('refresh');
+  const cooldown = s.providers.claude.rateLimitedUntil!;
+  const calls = fetcher.mock.calls.length;
+  s = await send('settings', { settings: { ...s.settings, claudeOrg: 'new-org' } });
+  expect(fetcher).toHaveBeenCalledTimes(calls);
+  expect(s.providers.claude.rateLimitedUntil).toBe(cooldown);
+  expect(s.providers.claude.quotas).toEqual([]);
+  expect(s.history.filter((p) => p.provider === 'claude')).toEqual([]);
+  fetcher.mockImplementation(async (url: string) =>
+    url.endsWith('/organizations')
+      ? response([{ uuid: 'new-org' }])
+      : response({ seven_day: { utilization: 10 } }),
+  );
+  vi.setSystemTime(cooldown);
+  s = await send('popup');
+  expect(s.providers.claude.account).toBe('new-org');
+  expect(s.providers.claude.status).toBe('ok');
 });
 it('slows automatic network collection while idle and resumes on activity', async () => {
   let currentIdle = 'idle';

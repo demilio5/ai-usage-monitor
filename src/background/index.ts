@@ -210,7 +210,13 @@ browser.runtime.onMessage.addListener((message: unknown, sender) => {
           s.providers[id] = { ...s.providers[id], nextAttempt: 0 };
       }
       if (s.settings.claudeOrg !== previous.claudeOrg) {
-        s.providers.claude = emptyProvider('claude');
+        const cooldown = s.providers.claude.rateLimitedUntil;
+        s.providers.claude = {
+          ...emptyProvider('claude'),
+          ...(cooldown && cooldown > Date.now()
+            ? { rateLimitedUntil: cooldown, nextAttempt: cooldown }
+            : {}),
+        };
         s.history = s.history.filter((p) => p.provider !== 'claude');
       }
       s.history = pruneHistory(s.history, Date.now(), s.settings.retentionDays);
