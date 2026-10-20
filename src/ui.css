@@ -1,0 +1,436 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f2f5f3;
+  --card: #fff;
+  --text: #20312e;
+  --muted: #6d7c77;
+  --line: #e3eae6;
+  --accent: #257b60;
+  --soft: #eaf3ed;
+  --warning: #a25829;
+  font:
+    13px/1.5 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #101918;
+    --card: #192523;
+    --text: #e0eae5;
+    --muted: #a0b0a9;
+    --line: #2b3c36;
+    --accent: #8ae4bf;
+    --soft: #243c31;
+    --warning: #f1ba83;
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #101918;
+  --card: #192523;
+  --text: #e0eae5;
+  --muted: #a0b0a9;
+  --line: #2b3c36;
+  --accent: #8ae4bf;
+  --soft: #243c31;
+  --warning: #f1ba83;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+body.popup {
+  width: 400px;
+}
+main {
+  padding: 20px;
+}
+.options main {
+  max-width: 780px;
+  margin: 32px auto;
+  padding: 24px;
+}
+h1 {
+  font-size: 22px;
+  letter-spacing: -0.7px;
+  line-height: 1.3;
+  margin: 5px 0 0;
+  font-weight: 730;
+}
+h2 {
+  font-size: 14px;
+  margin: 0;
+  font-weight: 700;
+}
+h3 {
+  font-size: 12px;
+  margin: 16px 0 4px;
+}
+p {
+  margin: 6px 0;
+}
+.eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.intro {
+  margin: 17px 0;
+}
+.local {
+  color: var(--accent);
+  font-size: 11px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 12px 0;
+  box-shadow: 0 3px 8px #102b2003;
+}
+.provider-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.provider-title h2 {
+  font-size: 13px;
+}
+.provider-icon {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 20px;
+}
+.provider-icon.claude {
+  background: #c4795520;
+  color: #c67c58;
+}
+.provider-icon.codex {
+  background: #8384cd20;
+  color: #9799e0;
+}
+.provider-icon.chatgpt {
+  background: #459d8520;
+  color: #4eab90;
+}
+.status {
+  font-size: 10px;
+  text-transform: capitalize;
+}
+.connected {
+  color: var(--accent);
+}
+.muted {
+  color: var(--muted);
+  font-size: 11px;
+}
+.detail {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 10px 0 2px;
+}
+.quota {
+  margin-top: 17px;
+}
+.value {
+  font-size: 14px;
+  letter-spacing: -0.3px;
+}
+.quota .spread {
+  font-size: 11px;
+}
+progress {
+  display: block;
+  width: 100%;
+  height: 7px;
+  border: 0;
+  border-radius: 20px;
+  margin: 8px 0;
+  background: var(--line);
+}
+progress::-moz-progress-bar {
+  background: var(--quota-color, var(--accent));
+  border-radius: 20px;
+  transition: width 0.3s ease;
+}
+progress::-webkit-progress-bar {
+  background: var(--line);
+  border-radius: 20px;
+}
+progress::-webkit-progress-value {
+  border-radius: 20px;
+  background: var(--quota-color, var(--accent));
+}
+.forecast {
+  border-left: 2px solid var(--line);
+  padding-left: 9px;
+  margin-top: 11px;
+  font-size: 11px;
+}
+.source {
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.card-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 10px;
+  font-size: 10px;
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+.warning {
+  color: var(--warning);
+  font-size: 11px;
+}
+.chart {
+  color: var(--accent);
+  margin-top: 7px;
+}
+.chart svg {
+  width: 100%;
+  height: 90px;
+  border-bottom: 1px solid var(--line);
+}
+button,
+select,
+input {
+  font: inherit;
+  color: var(--text);
+}
+button,
+select {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 11px;
+}
+button {
+  cursor: pointer;
+}
+button:hover {
+  background: var(--soft);
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.quiet,
+.icon-button {
+  background: transparent;
+  border: 0;
+  padding: 4px;
+}
+.quiet {
+  color: var(--accent);
+  font-size: 11px;
+}
+.icon-button {
+  font-size: 21px;
+}
+.primary {
+  background: var(--accent);
+  color: var(--card);
+  font-weight: 700;
+  padding: 10px 20px;
+}
+.danger {
+  color: #ce5e66;
+  margin-left: 8px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 11px 0;
+}
+.check input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 15px 0;
+}
+.setting input {
+  max-width: 290px;
+  width: 48%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px;
+}
+.setting select {
+  max-width: 55%;
+}
+.notice {
+  color: var(--accent);
+}
+footer {
+  text-align: center;
+  margin: 19px 0 0;
+  font-size: 10px;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+@media (max-width: 500px) {
+  .options main {
+    margin: 0;
+    padding: 14px;
+  }
+  .setting {
+    gap: 10px;
+  }
+  .options .card {
+    padding: 14px;
+  }
+}
+/* Compact toolbar popup: keep the three-provider overview within Firefox's popup height. */
+.popup main {
+  padding: 12px;
+}
+.popup h1 {
+  font-size: 19px;
+  margin: 0;
+}
+.popup .intro {
+  margin: 6px 0 10px;
+}
+.popup .card {
+  margin: 8px 0;
+  padding: 11px 12px;
+  border-radius: 12px;
+}
+.popup .provider-icon {
+  width: 23px;
+  height: 23px;
+  font-size: 17px;
+}
+.popup .provider-title {
+  gap: 7px;
+}
+.compact-quota {
+  display: grid;
+  grid-template-columns: 76px minmax(45px, 1fr) 35px 70px;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 11px;
+}
+.compact-quota progress {
+  margin: 0;
+  height: 6px;
+}
+.compact-quota strong {
+  text-align: right;
+  font-size: 13px;
+}
+.compact-quota .reset {
+  text-align: right;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.compact-detail {
+  margin: 8px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+}
+.compact-footer {
+  margin-top: 6px;
+}
+.compact-footer .muted,
+.compact-footer .quiet {
+  font-size: 10px;
+}
+.popup footer {
+  margin: 10px 0 0;
+}
+.popup .extra-caps {
+  font-size: 10px;
+  padding: 3px 0 0;
+}
+.options .reading-window {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+.popup {
+  line-height: 1.35;
+}
+.popup main {
+  padding: 10px;
+}
+.popup .card {
+  padding: 9px 12px;
+}
+.compact-quota {
+  margin-top: 5px;
+}
+.quota-columns {
+  margin-top: 5px;
+  font-size: 9px;
+}
+.compact-footer {
+  margin-top: 4px;
+}
+.popup .intro {
+  margin: 5px 0 7px;
+}
+/* Dates appear before total hours remaining, without widening the popup. */
+.compact-quota {
+  grid-template-columns: 76px minmax(45px, 1fr) 35px 100px;
+  margin-top: 4px;
+}
+.compact-quota .reset {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.1;
+  font-size: 9px;
+}
+.reset-date {
+  color: var(--text);
+}
+.reset-hours {
+  font-variant-numeric: tabular-nums;
+}

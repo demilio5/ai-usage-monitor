@@ -1,0 +1,33 @@
+{
+  "name": "ai-usage-monitor",
+  "version": "1.0.5",
+  "private": true,
+  "description": "Local-first Firefox subscription quota monitor",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint:extension": "addons-linter dist --warnings-as-errors",
+    "package": "npm run build && node scripts/package.mjs",
+    "check": "npm run typecheck && npm test && npm run build && npm run lint:extension",
+    "test:firefox": "npm run package && node scripts/firefox-smoke.mjs",
+    "package:source": "node scripts/package-source.mjs",
+    "format": "prettier --write src tests scripts public vitest.config.ts tsconfig.json package.json .prettierrc.json .github"
+  },
+  "devDependencies": {
+    "@types/firefox-webext-browser": "^120.0.4",
+    "addons-linter": "^10.14.0",
+    "esbuild": "^0.28.2",
+    "fflate": "^0.8.2",
+    "geckodriver": "^8.0.0",
+    "prettier": "^3.9.10",
+    "selenium-webdriver": "^4.51.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

@@ -1,0 +1,221 @@
+import { Builder, By, until } from 'selenium-webdriver';
+import firefox from 'selenium-webdriver/firefox.js';
+import { download } from 'geckodriver';
+import { resolve } from 'node:path';
+import { writeFile, mkdir } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const uuid = 'f08aae46-85f3-4c94-af1e-71222610fe17';
+const id = 'ai-usage-monitor@local.extension';
+const options = new firefox.Options()
+  .addArguments('-headless')
+  .setPreference('extensions.webextensions.uuids', JSON.stringify({ [id]: uuid }))
+  // Tests use a clean profile and deliberately cannot contact provider services.
+  .setPreference('network.proxy.type', 1)
+  .setPreference('network.proxy.http', '127.0.0.1')
+  .setPreference('network.proxy.http_port', 9)
+  .setPreference('network.proxy.ssl', '127.0.0.1')
+  .setPreference('network.proxy.ssl_port', 9);
+if (process.env.FIREFOX_BINARY) options.setBinary(process.env.FIREFOX_BINARY);
+else if (process.platform === 'win32')
+  options.setBinary('C:/Program Files/Mozilla Firefox/firefox.exe');
+const driverPath = await download('0.37.1');
+const driver = await new Builder()
+  .forBrowser('firefox')
+  .setFirefoxOptions(options)
+  .setFirefoxService(new firefox.ServiceBuilder(driverPath).addArguments('--allow-system-access'))
+  .build();
+const results = [];
+const run = async (name, fn) => {
+  await fn();
+  results.push(name);
+  console.log('PASS', name);
+};
+const script = async (fn, ...args) => driver.executeAsyncScript(fn, ...args);
+try {
+  await driver.manage().setTimeouts({ script: 60000 });
+  await driver.manage().window().setRect({ width: 460, height: 1500 });
+  const caps = await driver.getCapabilities();
+  console.log('Firefox', caps.get('browserVersion'));
+  await run('temporary Firefox MV3 install', async () =>
+    assert.equal(
+      await driver.installAddon(resolve('artifacts/ai-usage-monitor-1.0.5.zip'), true),
+      id,
+    ),
+  );
+  await driver.get(`moz-extension://${uuid}/popup.html`);
+  await driver.wait(until.elementLocated(By.css('.card')), 30000);
+  await run('popup renders honest unavailable states without account data', async () => {
+    const text = await driver.findElement(By.css('body')).getText();
+    assert.match(text, /AI Usage Monitor/);
+    assert.match(text, /ChatGPT/);
+    assert.match(text, /Codex/);
+    assert.doesNotMatch(text, /\d+% remaining/);
+    assert.equal(Math.round((await driver.findElement(By.css('body')).getRect()).width), 400);
+  });
+  await run('background alarm and gray toolbar badge operate', async () => {
+    const result = await script((done) =>
+      Promise.all([
+        browser.alarms.get('usage-tick'),
+        browser.action.getBadgeText({}),
+        browser.action.getTitle({}),
+      ]).then(done),
+    );
+    assert.equal(result[0].periodInMinutes, 1);
+    assert.equal(result[1], '');
+    assert.match(result[2], /Claude = top row/);
+    assert.match(result[2], /ChatGPT/);
+  });
+  await mkdir('artifacts', { recursive: true });
+  await writeFile(
+    'artifacts/firefox-popup-unavailable.png',
+    await driver.findElement(By.css('body')).takeScreenshot(),
+    'base64',
+  );
+  await run('settings save round trip and optional split icon', async () => {
+    await driver.get(`moz-extension://${uuid}/options.html`);
+    await driver.wait(until.elementLocated(By.css('form')), 10000);
+    await driver.findElement(By.css('[name=theme] option[value=dark]')).click();
+    const intervals = await driver.findElements(By.css('[name=interval] option'));
+    const values = await Promise.all(intervals.map((o) => o.getAttribute('value')));
+    for (const v of ['15', '30', '45', '60', '720', '1440']) assert.ok(values.includes(v));
+    assert.ok(await driver.findElement(By.css('[name=idleAware]')).isEnabled());
+    if (!(await driver.findElement(By.css('[name=dualIcon]')).isSelected()))
+      await driver.findElement(By.css('[name=dualIcon]')).click();
+    await driver.findElement(By.css('button[type=submit]')).click();
+    await driver.wait(
+      until.elementTextContains(driver.findElement(By.css('[role=status]')), 'Settings saved'),
+      30000,
+    );
+    const s = await script((done) => browser.runtime.sendMessage({ type: 'read' }).then(done));
+    assert.equal(s.settings.theme, 'dark');
+    assert.equal(s.settings.dualIcon, true);
+  });
+  await run('compact popup fits all providers and extra caps without scrolling', async () => {
+    // Synthetic data is injected only into this isolated test profile, never into a shipped build.
+    await script((done) =>
+      browser.runtime
+        .sendMessage({ type: 'read' })
+        .then(async (s) => {
+          const now = Date.now();
+          const q = {
+            id: 'five_hour',
+            label: '5-hour allowance',
+            used: 28,
+            remaining: 72,
+            resetAt: now + 7200000,
+            durationMs: 18000000,
+            source: 'TEST FIXTURE ONLY',
+          };
+          s.providers.claude = {
+            provider: 'claude',
+            status: 'ok',
+            detail: 'TEST FIXTURE ONLY',
+            quotas: [
+              q,
+              { ...q, id: 'seven_day', label: 'Weekly allowance', used: 10, remaining: 90 },
+              { ...q, id: 'seven_day_sonnet', label: 'Weekly · sonnet', used: 5, remaining: 95 },
+              { ...q, id: 'seven_day_opus', label: 'Weekly · opus', used: 5, remaining: 95 },
+            ],
+            lastSuccess: now,
+            lastAttempt: now,
+            nextAttempt: now + 86400000,
+            failures: 0,
+          };
+          s.providers.codex = {
+            ...s.providers.claude,
+            provider: 'codex',
+            quotas: [
+              { ...q, id: 'primary_window', used: 10, remaining: 90 },
+              { ...q, id: 'secondary_window', label: 'Weekly allowance', used: 20, remaining: 80 },
+            ],
+          };
+          s.history = [8, 18, 28].map((used, i) => ({
+            ...q,
+            provider: 'claude',
+            status: 'ok',
+            timestamp: now - (2 - i) * 900000,
+            used,
+            remaining: 100 - used,
+          }));
+          await browser.storage.local.set({ monitor: s });
+          done();
+        })
+        .catch((e) => done({ error: String(e) })),
+    );
+    await driver.get(`moz-extension://${uuid}/popup.html`);
+    await driver.wait(until.elementLocated(By.css('progress')), 10000);
+    const text = await driver.findElement(By.css('body')).getText();
+    assert.match(text, /72%/);
+    assert.match(await driver.findElement(By.css('.reset-hours')).getText(), /2h 0m left/);
+    assert.ok(
+      (await driver.findElement(By.css('time.reset-date')).getAttribute('datetime')).endsWith('Z'),
+    );
+    assert.ok(!(await driver.findElement(By.css('.reset-date')).getText()).includes('left'));
+    assert.match(text, /40.0%\/h/);
+
+    assert.equal((await driver.findElements(By.css('.chart svg'))).length, 0);
+    assert.ok(
+      await driver.executeScript(() => document.body.getBoundingClientRect().height <= 580),
+      'Popup must fit within 580px',
+    );
+    const badge = await script((done) =>
+      browser.runtime
+        .sendMessage({ type: 'popup' })
+        .then(() => browser.action.getBadgeText({}))
+        .then(done),
+    );
+    assert.equal(badge, '');
+    const fill = await driver.executeScript(
+      () =>
+        getComputedStyle(document.querySelector('progress'), '::-moz-progress-bar').backgroundColor,
+    );
+    assert.equal(fill, 'rgb(36, 135, 103)');
+    assert.equal(
+      await driver.executeScript(() => document.documentElement.scrollWidth > innerWidth),
+      false,
+    );
+  });
+  await writeFile(
+    'artifacts/firefox-popup-test-fixture.png',
+    await driver.findElement(By.css('body')).takeScreenshot(),
+    'base64',
+  );
+  await run('history graphs and range selector are available in settings', async () => {
+    await driver.get(`moz-extension://${uuid}/options.html#history`);
+    await driver.wait(until.elementLocated(By.css('.chart svg')), 10000);
+    await driver
+      .findElement(By.css('select[aria-label="History time range"] option[value="7"]'))
+      .click();
+    assert.equal(
+      await driver
+        .findElement(By.css('select[aria-label="History time range"]'))
+        .getAttribute('value'),
+      '7',
+    );
+  });
+  await run('history clear requires confirmation and clears observations', async () => {
+    await driver.get(`moz-extension://${uuid}/options.html`);
+    await driver.wait(until.elementLocated(By.css('.danger')), 10000);
+    await driver.findElement(By.css('.danger')).click();
+    await driver.switchTo().alert().accept();
+    await driver.wait(async () => {
+      const s = await script((done) => browser.runtime.sendMessage({ type: 'read' }).then(done));
+      return s.history.length === 0;
+    }, 10000);
+  });
+  await writeFile(
+    'artifacts/firefox-smoke-results.json',
+    JSON.stringify(
+      {
+        firefox: caps.get('browserVersion'),
+        checks: results,
+        realAccountTested: false,
+        providerNetworkBlocked: true,
+      },
+      null,
+      2,
+    ),
+  );
+} finally {
+  await driver.quit();
+}
