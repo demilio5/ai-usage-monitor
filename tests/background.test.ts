@@ -71,7 +71,7 @@ beforeEach(async () => {
     },
   });
   await import('../src/background/index');
-  await listener({ type: 'read' }, { id: 'test-id' });
+  await listener({ type: 'popup' }, { id: 'test-id' });
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -167,7 +167,7 @@ it('never notifies while alerts are off and preserves alert deduplication on cle
 it('alarm wakes the persisted scheduler without forcing early polls', async () => {
   const calls = fetcher.mock.calls.length;
   alarm({ name: 'usage-tick' });
-  await send('read');
+  await send('popup');
   expect(fetcher).toHaveBeenCalledTimes(calls);
 });
 it('preserves server cooldown across interval changes and provider disable/enable', async () => {
@@ -256,7 +256,57 @@ it('slows automatic network collection while idle and resumes on activity', asyn
   expect(fetcher).toHaveBeenCalledTimes(count);
   currentIdle = 'active';
   onState!('active');
-  s = await send('read');
+  s = await send('popup');
   expect(fetcher.mock.calls.length).toBeGreaterThan(count);
   expect(s.providers.claude.lastSuccess).toBe(now + 6 * 60000);
+});
+
+it('returns cached readings while a refresh is waiting for the network', async () => {
+  vi.setSystemTime(now + 60000);
+  let release!: () => void;
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const fetching = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  fetcher.mockImplementation(async (url: string) => {
+    started();
+    await pending;
+    return url.endsWith('/organizations')
+      ? response([{ uuid: 'fixture-org' }])
+      : url.includes('claude.ai')
+        ? response({ seven_day: { utilization: 40 } })
+        : response({}, 401);
+  });
+  const refresh = send('refresh');
+  await fetching;
+  try {
+    const cached = await send('read');
+    expect(cached.providers.claude.quotas[0].remaining).toBe(72);
+  } finally {
+    release();
+  }
+  expect((await refresh).providers.claude.quotas[0].remaining).toBe(60);
+});
+it('skips unchanged storage writes while still updating the toolbar clock', async () => {
+  const writes = vi.mocked(browser.storage.local.set).mock.calls.length;
+  const titles = vi.mocked(browser.action.setTitle).mock.calls.length;
+  await send('popup');
+  await send('popup');
+  expect(browser.storage.local.set).toHaveBeenCalledTimes(writes);
+  expect(browser.action.setTitle).toHaveBeenCalledTimes(titles + 2);
+});
+it('persists retention cleanup even when no provider is due', async () => {
+  const s = await send('read');
+  const recent = s.history[0];
+  s.history.unshift({ ...recent, timestamp: now - 31 * 86400000 });
+  s.alerts.expired = now - 36 * 86400000;
+  saved = s;
+  const writes = vi.mocked(browser.storage.local.set).mock.calls.length;
+  const result = await send('popup');
+  expect(result.history).toEqual([recent]);
+  expect(result.alerts).toEqual({});
+  expect(browser.storage.local.set).toHaveBeenCalledTimes(writes + 1);
 });

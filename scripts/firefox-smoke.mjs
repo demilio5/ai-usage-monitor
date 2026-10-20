@@ -53,6 +53,14 @@ try {
     assert.equal(Math.round((await driver.findElement(By.css('body')).getRect()).width), 400);
   });
   await run('background alarm and gray toolbar badge operate', async () => {
+    // Cached popup rendering can precede first-install toolbar initialization.
+    await driver.wait(
+      async () =>
+        (await script((done) => browser.action.getTitle({}).then(done))).includes(
+          'Claude = top row',
+        ),
+      30000,
+    );
     const result = await script((done) =>
       Promise.all([
         browser.alarms.get('usage-tick'),

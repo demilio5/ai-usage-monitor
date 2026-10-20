@@ -109,6 +109,9 @@ async function refresh(manual = false) {
     }
   }
   const results = await Promise.all(PROVIDERS.map((id) => collect(id, s, manual, isIdle)));
+  let changed = results.some(
+    (next) => JSON.stringify(next) !== JSON.stringify(s.providers[next.provider]),
+  );
   for (const next of results) {
     const old = s.providers[next.provider];
     if (next.lastAttempt !== old.lastAttempt && next.status === 'ok') {
@@ -137,11 +140,15 @@ async function refresh(manual = false) {
     }
     s.providers[next.provider] = next;
   }
-  s.history = pruneHistory(s.history, Date.now(), s.settings.retentionDays);
-  s.alerts = Object.fromEntries(
+  const history = pruneHistory(s.history, Date.now(), s.settings.retentionDays);
+  changed ||= history.length !== s.history.length || history.some((p, i) => p !== s.history[i]);
+  s.history = history;
+  const alerts = Object.fromEntries(
     Object.entries(s.alerts).filter(([, ts]) => ts > Date.now() - 35 * 86400000),
   );
-  await writeStore(s);
+  changed ||= Object.keys(alerts).length !== Object.keys(s.alerts).length;
+  s.alerts = alerts;
+  if (changed) await writeStore(s);
   await toolbar(s);
   return s;
 }
@@ -191,7 +198,8 @@ browser.permissions.onRemoved.addListener(() => {
 browser.runtime.onMessage.addListener((message: unknown, sender) => {
   if (sender.id !== browser.runtime.id || !message || typeof message !== 'object') return undefined;
   const m = message as { type?: string; settings?: unknown };
-  if (m.type === 'read') return serialize(readStore);
+  // Storage reads are atomic snapshots; they need not wait for network collection.
+  if (m.type === 'read') return readStore();
   if (m.type === 'refresh' || m.type === 'popup')
     return serialize(() => refresh(m.type === 'refresh'));
   if (m.type === 'settings')
