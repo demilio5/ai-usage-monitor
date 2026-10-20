@@ -98,25 +98,27 @@ it('resumes an approved ordinary unlisted version without uploading it twice', a
   expect(options.request).toHaveBeenCalledTimes(2);
   expect(options.fetcher.mock.calls[0][1].headers).toBeUndefined();
 });
-it('uploads the extension and original sources, waits for validation and signing, then verifies the download', async () => {
-  const uuid = '00000000-0000-4000-8000-000000000001';
-  const options = signingOptions([
-    null,
-    { uuid, processed: false },
-    { uuid, processed: true, valid: true, version: manifest.version },
-    { ...approved, file: { status: 'awaiting_review' } },
-    approved,
-  ]);
-  options.wait = vi.fn(async () => {});
-  expect(await signRelease(options)).toEqual(signed);
-  const upload = options.request.mock.calls[2][1].body;
-  expect(upload.get('channel')).toBe('unlisted');
-  const submission = options.request.mock.calls[4][1].body;
-  expect(submission.get('upload')).toBe(uuid);
-  expect(await submission.get('source').text()).toBe('SOURCE FIXTURE');
-  expect(submission.get('approval_notes')).toBe('Reviewer fixture');
-  expect(options.wait).toHaveBeenCalledTimes(2);
-});
+it.each(['00000000-0000-4000-8000-000000000001', '00000000000040008000000000000001'])(
+  'uploads sources and verifies signing with either Mozilla UUID format: %s',
+  async (uuid) => {
+    const options = signingOptions([
+      null,
+      { uuid, processed: false },
+      { uuid, processed: true, valid: true, version: manifest.version },
+      { ...approved, file: { status: 'awaiting_review' } },
+      approved,
+    ]);
+    options.wait = vi.fn(async () => {});
+    expect(await signRelease(options)).toEqual(signed);
+    const upload = options.request.mock.calls[2][1].body;
+    expect(upload.get('channel')).toBe('unlisted');
+    const submission = options.request.mock.calls[4][1].body;
+    expect(submission.get('upload')).toBe(uuid);
+    expect(await submission.get('source').text()).toBe('SOURCE FIXTURE');
+    expect(submission.get('approval_notes')).toBe('Reviewer fixture');
+    expect(options.wait).toHaveBeenCalledTimes(2);
+  },
+);
 it('stops when Mozilla rejects validation without creating a version or downloading', async () => {
   const options = signingOptions([
     null,

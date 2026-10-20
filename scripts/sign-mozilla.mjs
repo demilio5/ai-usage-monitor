@@ -33,7 +33,7 @@ export async function signRelease({
     upload.set('channel', 'unlisted');
     upload.set('upload', new Blob([archive], { type: 'application/zip' }), 'extension.zip');
     let result = await request('addons/upload/', { method: 'POST', body: upload });
-    if (!/^[a-f0-9-]{36}$/i.test(result.uuid))
+    if (!/^(?:[a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i.test(result.uuid))
       throw new Error('Mozilla returned an invalid upload ID.');
     const uploadPath = `addons/upload/${result.uuid}/`;
     log('Extension uploaded; waiting for Mozilla validation.');
