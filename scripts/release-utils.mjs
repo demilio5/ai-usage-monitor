@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { unzipSync, strFromU8 } from 'fflate';
 
 export function verifySignedXpi(bytes, unsigned, manifest, expectedHash) {
@@ -18,7 +19,12 @@ export function verifySignedXpi(bytes, unsigned, manifest, expectedHash) {
   )
     throw new Error('Signed extension identity, version, or update URL differs from this release.');
   for (const [name, content] of Object.entries(original))
-    if (!signed[name] || !Buffer.from(content).equals(Buffer.from(signed[name])))
+    if (
+      !signed[name] ||
+      (name === 'manifest.json'
+        ? !isDeepStrictEqual(JSON.parse(strFromU8(content)), metadata)
+        : !Buffer.from(content).equals(Buffer.from(signed[name])))
+    )
       throw new Error(`Signed package differs from the local build: ${name}`);
   if (!Object.keys(signed).some((name) => /^META-INF\/.*\.(rsa|p7s)$/i.test(name)))
     throw new Error('Downloaded extension has no Mozilla signature files.');

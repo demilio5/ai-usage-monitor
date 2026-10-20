@@ -206,6 +206,21 @@ it('generates an HTTPS update feed tied to the exact add-on ID, artifact hash, a
   expect(() => updateFeed(manifest, 'invalid repo', 'a'.repeat(64))).toThrow();
 });
 
+it('allows Mozilla manifest whitespace normalization but rejects changed manifest values', () => {
+  const normalized = zipSync({
+    ...files,
+    'manifest.json': strToU8(JSON.stringify(manifest, null, 2)),
+    'META-INF/mozilla.rsa': strToU8('SIGNATURE FIXTURE ONLY'),
+  });
+  expect(() => verifySignedXpi(normalized, archive, manifest, hash(normalized))).not.toThrow();
+  const changed = zipSync({
+    ...files,
+    'manifest.json': strToU8(JSON.stringify({ ...manifest, permissions: ['tabs'] })),
+    'META-INF/mozilla.rsa': strToU8('SIGNATURE FIXTURE ONLY'),
+  });
+  expect(() => verifySignedXpi(changed, archive, manifest, hash(changed))).toThrow('manifest.json');
+});
+
 it('reports actionable Mozilla field errors with credentials redacted', async () => {
   const request = mozillaClient({
     issuer: 'fixture-issuer',
