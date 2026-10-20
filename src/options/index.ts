@@ -110,7 +110,7 @@ function render() {
     el(
       'p',
       'muted',
-      'Leave blank for accounts with one organization. With multiple organizations, find the ID in the URL of the usage request in Firefox Developer Tools → Network on claude.ai/settings/usage. Switching organizations clears Claude history.',
+      'Leave blank to keep the last successfully tracked organization, or select automatically when there is only one. To choose another organization, find its ID in the usage request URL in Firefox Developer Tools → Network on claude.ai/settings/usage. Changing this setting clears Claude history.',
     ),
   );
   form.append(connections);

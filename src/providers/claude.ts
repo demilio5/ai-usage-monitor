@@ -29,6 +29,7 @@ export function parseClaude(data: unknown): Quota[] {
 export async function fetchClaude(
   orgPreference = '',
   fetcher: typeof fetch = fetch,
+  previousOrg = '',
 ): Promise<ProviderResult> {
   const data = await getJson('https://claude.ai/api/organizations', fetcher);
   const root = object(data);
@@ -38,7 +39,10 @@ export async function fetchClaude(
   const ids = orgs
     .map((o) => o.uuid ?? o.id)
     .filter((v): v is string => typeof v === 'string' && /^[a-zA-Z0-9_-]+$/.test(v));
-  let id = orgPreference || (ids.length === 1 ? ids[0] : '');
+  // Keep the last successfully tracked organization if it is still a membership.
+  // Explicit settings take priority; a new ambiguous account still requires a choice.
+  const id =
+    orgPreference || (ids.includes(previousOrg) ? previousOrg : ids.length === 1 ? ids[0] : '');
   if (!id || !ids.includes(id))
     throw new ProviderError(
       'unavailable',

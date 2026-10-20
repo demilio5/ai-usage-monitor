@@ -55,6 +55,26 @@ describe('Claude adapter', () => {
     await expect(fetchClaude('', vi.fn().mockResolvedValue(json({}, 401)))).rejects.toMatchObject({
       status: 'auth',
     }));
+  it('keeps the previously tracked organization when additional memberships appear', async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(json([{ uuid: 'other' }, { uuid: 'tracked' }]))
+      .mockResolvedValueOnce(json(fixture));
+    expect((await fetchClaude('', f, 'tracked')).account).toBe('tracked');
+    expect(f.mock.calls[1][0]).toBe('https://claude.ai/api/organizations/tracked/usage');
+  });
+  it('honors explicit choice over the previous organization', async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(json([{ uuid: 'chosen' }, { uuid: 'tracked' }]))
+      .mockResolvedValueOnce(json(fixture));
+    expect((await fetchClaude('chosen', f, 'tracked')).account).toBe('chosen');
+  });
+  it('does not reuse a previous organization that is no longer a membership', async () => {
+    const f = vi.fn().mockResolvedValue(json([{ uuid: 'one' }, { uuid: 'two' }]));
+    await expect(fetchClaude('', f, 'removed')).rejects.toThrow('Multiple');
+    expect(f).toHaveBeenCalledTimes(1);
+  });
 });
 describe('Codex adapter', () => {
   it('reads primary/secondary windows without assuming plan duration', () => {

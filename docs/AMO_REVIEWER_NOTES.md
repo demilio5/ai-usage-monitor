@@ -1,4 +1,4 @@
-# Mozilla reviewer notes — AI Usage Monitor 1.0.5
+# Mozilla reviewer notes — AI Usage Monitor 1.0.6
 
 Distribution requested: unlisted, signed self-distribution. The signed XPI is intended for permanent installation in desktop Firefox; this submission is not a request for a public AMO listing.
 

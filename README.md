@@ -11,21 +11,21 @@ Requires desktop Firefox 142 or later. The packaged build has been installed and
 1. Open Firefox and sign into https://claude.ai in your usual, non-container profile session. For Codex, sign into https://chatgpt.com as well.
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on…**.
-4. Select `dist/manifest.json` in this project. Keep all files in `dist/` together. Alternatively, select the packaged `artifacts/ai-usage-monitor-1.0.5.zip` from this same temporary-load dialog.
+4. Select `dist/manifest.json` in this project. Keep all files in `dist/` together. Alternatively, select the packaged `artifacts/ai-usage-monitor-1.0.6.zip` from this same temporary-load dialog.
 5. Open Firefox's Extensions menu (puzzle icon), find **AI Usage Monitor**, and pin it to the toolbar.
 6. Allow the requested website access if Firefox asks. Click the icon to see the dashboard. Use the gear for settings and connection diagnostics.
 
 Temporary add-ons disappear after Firefox restarts. The unsigned ZIP cannot be installed permanently through the ordinary add-ons installer. A permanent installation requires Mozilla signing (see below). No production extension is installed into your normal Firefox profile by the test script.
 
-When connecting for the first time, allow up to 15 seconds per request. If you sign in after an authentication error, use **Refresh** / **Retry connections** after the one-minute manual throttle. Server cooldowns always apply. Multi-organization Claude accounts need an organization ID in Settings; instructions are shown there. A private window or a container-only login will not necessarily supply the same session cookies.
+When connecting for the first time, allow up to 15 seconds per request. If you sign in after an authentication error, use **Refresh** / **Retry connections** after the one-minute manual throttle. Server cooldowns always apply. Claude keeps the last successfully tracked organization if it remains in the membership list. With multiple organizations and no usable previous choice, enter an organization ID in Settings; an explicit selection always takes priority. A private window or a container-only login will not necessarily supply the same session cookies.
 
 ## Provider behavior
 
-| Display | Windows | Authentication and limitations |
-| --- | --- | --- |
-| Claude + Claude Code | Reported five-hour, weekly, and available weekly model caps | Browser-managed Claude cookies. Uses organization discovery plus internal usage endpoint. Missing percentages remain unavailable. Subscription-only; API-key Code usage is outside this pool. |
-| ChatGPT | Unavailable | No verified global subscription quota meter. No speculative requests or fabricated percentages. |
-| Codex | Reported primary/secondary windows; duration-based labels | Uses the existing ChatGPT browser session, obtains an access token in memory from auth/session, and sends it only to the same-origin WHAM usage endpoint. Sign in at chatgpt.com in the normal Firefox profile. Internal endpoints may change or reject sessions. |
+| Display              | Windows                                                     | Authentication and limitations                                                                                                                                                                                                                                    |
+| -------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude + Claude Code | Reported five-hour, weekly, and available weekly model caps | Browser-managed Claude cookies. Uses organization discovery plus internal usage endpoint. Missing percentages remain unavailable. Subscription-only; API-key Code usage is outside this pool.                                                                     |
+| ChatGPT              | Unavailable                                                 | No verified global subscription quota meter. No speculative requests or fabricated percentages.                                                                                                                                                                   |
+| Codex                | Reported primary/secondary windows; duration-based labels   | Uses the existing ChatGPT browser session, obtains an access token in memory from auth/session, and sends it only to the same-origin WHAM usage endpoint. Sign in at chatgpt.com in the normal Firefox profile. Internal endpoints may change or reject sessions. |
 
 See [research](docs/RESEARCH.md) for inspected commits, source paths, licensing, relationships between allowances, upstream fixture results, and official provider references. These undocumented endpoints can change. **No live account quota retrieval has been verified in this environment.**
 
@@ -67,7 +67,7 @@ For the Firefox test set `FIREFOX_BINARY` if your executable is not in the stand
 1. Run `npm ci`, `npm run check`, `npm run package`, and `npm run package:source` from a clean checkout.
 2. Complete the real-account checks in [validation](docs/VALIDATION.md). Do not advertise Codex or ChatGPT as working accurate meters unless a compliant, tested authentication/data source has been established.
 3. Create a developer account at https://addons.mozilla.org/developers/ and submit the unsigned ZIP. Choose listed distribution for a public AMO listing or unlisted distribution for signed self-distribution.
-4. Provide `artifacts/ai-usage-monitor-source-1.0.5.zip` when Mozilla requests source for bundled JavaScript. Include the build command `npm ci && npm run build`, Node requirement, and explanation that esbuild bundles original TypeScript. Disclose the internal quota endpoints and host permissions.
+4. Provide `artifacts/ai-usage-monitor-source-1.0.6.zip` when Mozilla requests source for bundled JavaScript. Include the build command `npm ci && npm run build`, Node requirement, and explanation that esbuild bundles original TypeScript. Disclose the internal quota endpoints and host permissions.
 5. Use [PRIVACY.md](PRIVACY.md) as the privacy-policy basis and include third-party notices. Review Mozilla's current policies, describe experimental/unavailable providers accurately, and supply reviewer testing instructions without sharing your credentials.
 6. Mozilla returns a signed XPI after validation/review. Install that XPI for persistence. Increment both `package.json` and `public/manifest.json` for subsequent releases; update archive filenames in the scripts when changing versions.
 
@@ -99,4 +99,4 @@ MIT license. Reference project attributions and MIT terms are in [THIRD_PARTY_NO
 
 ## Updating a temporary installation
 
-After files are rebuilt, visit about:debugging#/runtime/this-firefox and click Reload beside AI Usage Monitor. Confirm v1.0.5 in the popup footer. Sign in at chatgpt.com in a regular tab and click Refresh. Existing preferences and history remain. If loaded from an older ZIP, remove that temporary add-on and load this project's dist/manifest.json (removal may clear extension data).
+After files are rebuilt, visit about:debugging#/runtime/this-firefox and click Reload beside AI Usage Monitor. Confirm v1.0.6 in the popup footer. Sign in at chatgpt.com in a regular tab and click Refresh. Existing preferences and history remain. If loaded from an older ZIP, remove that temporary add-on and load this project's dist/manifest.json (removal may clear extension data).

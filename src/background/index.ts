@@ -62,7 +62,7 @@ async function collect(
         'Website access has not been granted. Allow access from Firefox’s extension permissions.',
       );
     const result = await (id === 'claude'
-      ? fetchClaude(s.settings.claudeOrg)
+      ? fetchClaude(s.settings.claudeOrg, fetch, old.account)
       : id === 'codex'
         ? fetchCodex()
         : fetchChatGPT());

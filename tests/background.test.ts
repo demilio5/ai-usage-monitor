@@ -326,3 +326,34 @@ it('keeps a full retained history unchanged without rewriting it on idle ticks',
   expect(result.history).toHaveLength(18000);
   expect(browser.storage.local.set).toHaveBeenCalledTimes(writes);
 });
+it('recovers ambiguous discovery using the last successful Claude organization', async () => {
+  const s = await send('read');
+  saved = {
+    ...s,
+    providers: {
+      ...s.providers,
+      claude: {
+        ...s.providers.claude,
+        status: 'unavailable',
+        detail: 'Multiple Claude organizations.',
+        failures: 3,
+        nextAttempt: now + 7200000,
+      },
+    },
+  };
+  vi.setSystemTime(now + 60000);
+  fetcher.mockImplementation(async (url: string) =>
+    url.endsWith('/organizations')
+      ? response([{ uuid: 'other-org' }, { uuid: 'fixture-org' }])
+      : url.includes('claude.ai')
+        ? response({ seven_day: { utilization: 63 } })
+        : response({}, 401),
+  );
+  const result = await send('refresh');
+  expect(result.providers.claude.status).toBe('ok');
+  expect(result.providers.claude.account).toBe('fixture-org');
+  expect(result.providers.claude.quotas[0].remaining).toBe(37);
+  expect(result.settings.claudeOrg).toBe('');
+  expect(result.history.filter((p) => p.provider === 'claude')).toHaveLength(2);
+  expect(fetcher.mock.calls.some(([url]) => String(url).includes('/other-org/usage'))).toBe(false);
+});
