@@ -34,7 +34,7 @@ const run = async (name, fn) => {
 const script = async (fn, ...args) => driver.executeAsyncScript(fn, ...args);
 try {
   await driver.manage().setTimeouts({ script: 60000 });
-  await driver.manage().window().setRect({ width: 460, height: 1500 });
+  await driver.manage().window().setRect({ width: 620, height: 1500 });
   const caps = await driver.getCapabilities();
   console.log('Firefox', caps.get('browserVersion'));
   await run('temporary Firefox MV3 install', async () =>
@@ -51,7 +51,7 @@ try {
     assert.match(text, /ChatGPT/);
     assert.match(text, /Codex/);
     assert.doesNotMatch(text, /\d+% remaining/);
-    assert.equal(Math.round((await driver.findElement(By.css('body')).getRect()).width), 400);
+    assert.equal(Math.round((await driver.findElement(By.css('body')).getRect()).width), 520);
   });
   await run('background alarm and gray toolbar badge operate', async () => {
     // Cached popup rendering can precede first-install toolbar initialization.
@@ -163,6 +163,13 @@ try {
     assert.match(text, /40.0%\/h/);
 
     assert.equal((await driver.findElements(By.css('.chart svg'))).length, 0);
+    console.log(
+      'Popup dimensions',
+      await driver.executeScript(() => ({
+        width: document.body.getBoundingClientRect().width,
+        height: document.body.getBoundingClientRect().height,
+      })),
+    );
     assert.ok(
       await driver.executeScript(() => document.body.getBoundingClientRect().height <= 580),
       'Popup must fit within 580px',
@@ -189,6 +196,37 @@ try {
     await driver.findElement(By.css('body')).takeScreenshot(),
     'base64',
   );
+  await run('larger light popup has readable reset text and no scrolling', async () => {
+    await script((done) =>
+      browser.runtime.sendMessage({ type: 'read' }).then(async (s) => {
+        s.settings.theme = 'light';
+        s.settings.enabled.chatgpt = false;
+        await browser.storage.local.set({ monitor: s });
+        done();
+      }),
+    );
+    await driver.wait(
+      async () => driver.executeScript(() => document.documentElement.dataset.theme === 'light'),
+      10000,
+    );
+    const sizes = await driver.executeScript(() => ({
+      date: parseFloat(getComputedStyle(document.querySelector('.reset-date')).fontSize),
+      time: parseFloat(getComputedStyle(document.querySelector('.reset-hours')).fontSize),
+      percent: parseFloat(
+        getComputedStyle(document.querySelector('.compact-quota strong')).fontSize,
+      ),
+      width: document.body.getBoundingClientRect().width,
+      height: document.body.getBoundingClientRect().height,
+    }));
+    assert.equal(sizes.width, 520);
+    assert.ok(sizes.date >= 12 && sizes.time >= 11 && sizes.percent >= 16);
+    assert.ok(sizes.height <= 580);
+    await writeFile(
+      'artifacts/firefox-popup-readable-light.png',
+      await driver.findElement(By.css('body')).takeScreenshot(),
+      'base64',
+    );
+  });
   await run('expired short window leaves current weekly readings and forecast usable', async () => {
     await script((done) =>
       browser.runtime.sendMessage({ type: 'read' }).then(async (s) => {
