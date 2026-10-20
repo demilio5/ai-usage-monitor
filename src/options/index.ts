@@ -370,7 +370,7 @@ function render() {
     el(
       'footer',
       'muted',
-      'v1.0.5 · Read-only requests to claude.ai and chatgpt.com. Session tokens stay in memory; no telemetry or account billing requests.',
+      `v${browser.runtime.getManifest().version} · Read-only requests to claude.ai and chatgpt.com. Session tokens stay in memory; no telemetry or account billing requests.`,
     ),
   );
 }

@@ -1,6 +1,7 @@
 import { readdir, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { zipSync } from 'fflate';
 const files = {};
+const { version } = JSON.parse(await readFile('dist/manifest.json', 'utf8'));
 async function walk(dir, prefix = '') {
   for (const e of await readdir(dir, { withFileTypes: true })) {
     const key = prefix + e.name;
@@ -10,5 +11,6 @@ async function walk(dir, prefix = '') {
 }
 await walk('dist');
 await mkdir('artifacts', { recursive: true });
-await writeFile('artifacts/ai-usage-monitor-1.0.5.zip', zipSync(files));
-console.log('Packaged artifacts/ai-usage-monitor-1.0.5.zip (unsigned)');
+const output = `artifacts/ai-usage-monitor-${version}.zip`;
+await writeFile(output, zipSync(files));
+console.log(`Packaged ${output} (unsigned)`);

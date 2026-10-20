@@ -1,6 +1,7 @@
 import { readdir, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { zipSync } from 'fflate';
 const files = {};
+const { version } = JSON.parse(await readFile('package.json', 'utf8'));
 const include = ['src', 'public', 'scripts', 'tests', 'docs', '.github'];
 async function walk(dir) {
   for (const e of await readdir(dir, { withFileTypes: true })) {
@@ -25,5 +26,6 @@ for (const name of [
 ])
   files[name] = new Uint8Array(await readFile(name));
 await mkdir('artifacts', { recursive: true });
-await writeFile('artifacts/ai-usage-monitor-source-1.0.5.zip', zipSync(files));
-console.log('Reviewable source archived in artifacts/ai-usage-monitor-source-1.0.5.zip');
+const output = `artifacts/ai-usage-monitor-source-${version}.zip`;
+await writeFile(output, zipSync(files));
+console.log(`Reviewable source archived in ${output}`);

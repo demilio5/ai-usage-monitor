@@ -2,10 +2,11 @@ import { Builder, By, until } from 'selenium-webdriver';
 import firefox from 'selenium-webdriver/firefox.js';
 import { download } from 'geckodriver';
 import { resolve } from 'node:path';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const uuid = 'f08aae46-85f3-4c94-af1e-71222610fe17';
 const id = 'ai-usage-monitor@local.extension';
+const { version } = JSON.parse(await readFile('public/manifest.json', 'utf8'));
 const options = new firefox.Options()
   .addArguments('-headless')
   .setPreference('extensions.webextensions.uuids', JSON.stringify({ [id]: uuid }))
@@ -38,7 +39,7 @@ try {
   console.log('Firefox', caps.get('browserVersion'));
   await run('temporary Firefox MV3 install', async () =>
     assert.equal(
-      await driver.installAddon(resolve('artifacts/ai-usage-monitor-1.0.5.zip'), true),
+      await driver.installAddon(resolve(`artifacts/ai-usage-monitor-${version}.zip`), true),
       id,
     ),
   );

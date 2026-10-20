@@ -1,5 +1,9 @@
 import { build } from 'esbuild';
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, rm, readFile } from 'node:fs/promises';
+const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+const manifest = JSON.parse(await readFile('public/manifest.json', 'utf8'));
+if (manifest.version !== pkg.version)
+  throw new Error('package.json and public/manifest.json versions must match.');
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await cp('public', 'dist', { recursive: true });

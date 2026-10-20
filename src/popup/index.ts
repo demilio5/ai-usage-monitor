@@ -153,7 +153,7 @@ function render() {
   const footer = el('footer', 'spread');
   footer.append(
     button('History & forecasts ↗', () => details('#history'), 'quiet'),
-    el('span', 'muted', 'v1.0.5 · remaining bars'),
+    el('span', 'muted', `v${browser.runtime.getManifest().version} · remaining bars`),
   );
   app.append(footer);
 }
