@@ -310,3 +310,19 @@ it('persists retention cleanup even when no provider is due', async () => {
   expect(result.alerts).toEqual({});
   expect(browser.storage.local.set).toHaveBeenCalledTimes(writes + 1);
 });
+
+it('keeps a full retained history unchanged without rewriting it on idle ticks', async () => {
+  const s = await send('read');
+  const point = s.history[0];
+  s.history = Array.from({ length: 18000 }, (_, i) => ({
+    ...point,
+    id: `window-${Math.floor(i / 1400)}`,
+    timestamp: now - (i % 1400) * 60000,
+  })).sort((a, b) => a.timestamp - b.timestamp);
+  saved = s;
+  const writes = vi.mocked(browser.storage.local.set).mock.calls.length;
+  const result = await send('popup');
+  expect(result.history).toEqual(s.history);
+  expect(result.history).toHaveLength(18000);
+  expect(browser.storage.local.set).toHaveBeenCalledTimes(writes);
+});

@@ -4,7 +4,10 @@ import {
   type Store,
   type ProviderData,
   type ProviderState,
+  type Quota,
+  type Observation,
 } from '../providers/types';
+import { percentage } from '../calculations/quota';
 export const defaults: Settings = {
   enabled: { claude: true, chatgpt: true, codex: true },
   badge: 'auto',
@@ -40,7 +43,12 @@ export function validateSettings(raw: unknown): Settings {
     s.claudeOrg = r.claudeOrg;
   return s;
 }
-export function emptyProvider(provider: ProviderData['provider']): ProviderData {
+export function emptyProvider(
+  provider: ProviderData['provider'],
+  rateLimitedUntil?: number,
+): ProviderData {
+  const cooldown =
+    timestamp(rateLimitedUntil) && rateLimitedUntil > Date.now() ? rateLimitedUntil : 0;
   return {
     provider,
     status: 'unavailable',
@@ -48,8 +56,9 @@ export function emptyProvider(provider: ProviderData['provider']): ProviderData 
     quotas: [],
     lastSuccess: null,
     lastAttempt: null,
-    nextAttempt: 0,
+    nextAttempt: cooldown,
     failures: 0,
+    ...(cooldown ? { rateLimitedUntil: cooldown } : {}),
   };
 }
 export function emptyStore(): Store {
@@ -61,10 +70,83 @@ export function emptyStore(): Store {
     alerts: {},
   };
 }
+const statuses = [
+  'ok',
+  'auth',
+  'blocked',
+  'unavailable',
+  'offline',
+  'network',
+  'rate-limit',
+  'disabled',
+  'permission',
+];
+const timestamp = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 8640000000000000;
+function validQuota(value: unknown): value is Quota {
+  const q = value as Partial<Quota> | null;
+  return (
+    !!q &&
+    typeof q.id === 'string' &&
+    typeof q.label === 'string' &&
+    typeof q.source === 'string' &&
+    percentage(q.used) !== null &&
+    percentage(q.remaining) !== null &&
+    (q.resetAt === null || timestamp(q.resetAt)) &&
+    (q.durationMs === null ||
+      (typeof q.durationMs === 'number' && Number.isFinite(q.durationMs) && q.durationMs > 0))
+  );
+}
+function validProvider(value: unknown, id: ProviderData['provider']): value is ProviderData {
+  const p = value as Partial<ProviderData> | null;
+  return (
+    !!p &&
+    p.provider === id &&
+    statuses.includes(p.status!) &&
+    typeof p.detail === 'string' &&
+    Array.isArray(p.quotas) &&
+    p.quotas.every(validQuota) &&
+    (p.lastSuccess === null || timestamp(p.lastSuccess)) &&
+    (p.lastAttempt === null || timestamp(p.lastAttempt)) &&
+    timestamp(p.nextAttempt) &&
+    typeof p.failures === 'number' &&
+    Number.isInteger(p.failures) &&
+    p.failures >= 0 &&
+    (p.account === undefined || typeof p.account === 'string') &&
+    (p.rateLimitedUntil === undefined || timestamp(p.rateLimitedUntil))
+  );
+}
+function validObservation(value: unknown): value is Observation {
+  const p = value as Partial<Observation> | null;
+  return (
+    validQuota(value) &&
+    !!p &&
+    PROVIDERS.includes(p.provider!) &&
+    statuses.includes(p.status!) &&
+    timestamp(p.timestamp) &&
+    (p.account === undefined || typeof p.account === 'string')
+  );
+}
 export async function readStore(): Promise<Store> {
-  const raw = (await browser.storage.local.get('monitor')).monitor as Store | undefined;
+  const raw = (await browser.storage.local.get('monitor')).monitor as Partial<Store> | undefined;
   if (!raw || raw.version !== 1) return emptyStore();
-  return { ...raw, settings: validateSettings(raw.settings) };
+  return {
+    version: 1,
+    settings: validateSettings(raw.settings),
+    providers: Object.fromEntries(
+      PROVIDERS.map((id) => {
+        const provider = raw.providers?.[id];
+        const cooldown = provider?.rateLimitedUntil;
+        return [id, validProvider(provider, id) ? provider : emptyProvider(id, cooldown)];
+      }),
+    ) as ProviderState,
+    history: Array.isArray(raw.history) ? raw.history.filter(validObservation) : [],
+    alerts: Object.fromEntries(
+      Object.entries(raw.alerts && typeof raw.alerts === 'object' ? raw.alerts : {}).filter(
+        ([, value]) => timestamp(value),
+      ),
+    ),
+  };
 }
 export async function writeStore(s: Store): Promise<void> {
   await browser.storage.local.set({ monitor: s });
