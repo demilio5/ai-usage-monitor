@@ -11,7 +11,7 @@ Requires desktop Firefox 142 or later. The packaged build has been installed and
 1. Open Firefox and sign into https://claude.ai in your usual, non-container profile session. For Codex, sign into https://chatgpt.com as well.
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on…**.
-4. Select `dist/manifest.json` in this project. Keep all files in `dist/` together. Alternatively, select the packaged `artifacts/ai-usage-monitor-1.0.6.zip` from this same temporary-load dialog.
+4. Select `dist/manifest.json` in this project. Keep all files in `dist/` together. Alternatively, select the packaged `artifacts/ai-usage-monitor-1.0.7.zip` from this same temporary-load dialog.
 5. Open Firefox's Extensions menu (puzzle icon), find **AI Usage Monitor**, and pin it to the toolbar.
 6. Allow the requested website access if Firefox asks. Click the icon to see the dashboard. Use the gear for settings and connection diagnostics.
 
@@ -53,7 +53,7 @@ npm run package
 ```
 
 - `npm run typecheck` — strict TypeScript checks
-- `npm test` — 70 provider, quota, forecasting, history, badge, notification, and background integration tests with mock responses
+- `npm test` — 110 provider, quota, forecasting, history, badge, notification, and background integration tests with mock responses
 - `npm run build` — produce self-contained `dist/`
 - `npm run lint:extension` — Mozilla Add-ons Linter, warnings treated as errors
 - `npm run package` — build and write unsigned distribution ZIP
@@ -64,14 +64,17 @@ For the Firefox test set `FIREFOX_BINARY` if your executable is not in the stand
 
 ## Signing and publishing
 
-1. Run `npm ci`, `npm run check`, `npm run package`, and `npm run package:source` from a clean checkout.
-2. Complete the real-account checks in [validation](docs/VALIDATION.md). Do not advertise Codex or ChatGPT as working accurate meters unless a compliant, tested authentication/data source has been established.
-3. Create a developer account at https://addons.mozilla.org/developers/ and submit the unsigned ZIP. Choose listed distribution for a public AMO listing or unlisted distribution for signed self-distribution.
-4. Provide `artifacts/ai-usage-monitor-source-1.0.6.zip` when Mozilla requests source for bundled JavaScript. Include the build command `npm ci && npm run build`, Node requirement, and explanation that esbuild bundles original TypeScript. Disclose the internal quota endpoints and host permissions.
-5. Use [PRIVACY.md](PRIVACY.md) as the privacy-policy basis and include third-party notices. Review Mozilla's current policies, describe experimental/unavailable providers accurately, and supply reviewer testing instructions without sharing your credentials.
-6. Mozilla returns a signed XPI after validation/review. Install that XPI for persistence. Increment both `package.json` and `public/manifest.json` for subsequent releases; update archive filenames in the scripts when changing versions.
+Releases remain unlisted on Mozilla and are distributed through [GitHub releases](https://github.com/demilio5/ai-usage-monitor/releases/latest), with [an HTTPS Firefox update feed](https://demilio5.github.io/ai-usage-monitor/updates.json) hosted on GitHub Pages.
 
-Official guidance: https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/ and https://extensionworkshop.com/documentation/publish/source-code-submission/ . This repository does not publish or sign anything automatically, and contains no publisher secrets.
+On Windows, configure an existing Mozilla credential in Windows Credential Manager and your GitHub CLI path as described in [the signing guide](docs/SIGNING.md). No signing secret belongs in a file or this repository.
+
+- `npm run release:prepare` validates and builds without signing or publishing.
+- `npm run release:new` bumps the patch version, validates, signs through Mozilla with source attached, and publishes the signed XPI and update feed.
+- `npm run release` releases the current version or resumes a pending release without bumping again.
+
+Install the signed update-enabled version once. Subsequent higher versions are delivered through Firefox's updater; the extension retains its existing ID. See [validation](docs/VALIDATION.md) for live-account and OS acceptance checks.
+
+Official guidance: [Mozilla signing](https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/) and [Firefox update manifests](https://extensionworkshop.com/documentation/manage/updating-your-extension/).
 
 ## Project structure
 
@@ -99,4 +102,4 @@ MIT license. Reference project attributions and MIT terms are in [THIRD_PARTY_NO
 
 ## Updating a temporary installation
 
-After files are rebuilt, visit about:debugging#/runtime/this-firefox and click Reload beside AI Usage Monitor. Confirm v1.0.6 in the popup footer. Sign in at chatgpt.com in a regular tab and click Refresh. Existing preferences and history remain. If loaded from an older ZIP, remove that temporary add-on and load this project's dist/manifest.json (removal may clear extension data).
+After files are rebuilt, visit about:debugging#/runtime/this-firefox and click Reload beside AI Usage Monitor. Confirm v1.0.7 in the popup footer. Sign in at chatgpt.com in a regular tab and click Refresh. Existing preferences and history remain. If loaded from an older ZIP, remove that temporary add-on and load this project's dist/manifest.json (removal may clear extension data).

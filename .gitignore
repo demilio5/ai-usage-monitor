@@ -4,3 +4,6 @@ artifacts/
 research/
 .firefox-test/
 coverage/
+.env*
+*.local.json
+*-history.csv

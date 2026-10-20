@@ -1,16 +1,40 @@
-# Signing handoff — 1.0.2
+# Automated unlisted signing and Firefox updates
 
-Prepared packages:
+Releases update `ai-usage-monitor@local.extension`. Public configuration is in `release.config.json`. Source and downloads are at https://github.com/demilio5/ai-usage-monitor. Firefox reads https://demilio5.github.io/ai-usage-monitor/updates.json, served by Pages from `/docs` on the default branch.
 
-- Extension upload: artifacts/ai-usage-monitor-1.0.2.zip
-- Original source upload: artifacts/ai-usage-monitor-source-1.0.2.zip
-- Reviewer notes: docs/AMO_REVIEWER_NOTES.md
-- Privacy policy: PRIVACY.md
+## Windows setup
 
-Open https://addons.mozilla.org/developers/ and sign in with your Mozilla account. Use Submit a New Add-on, select On your own (unlisted distribution), and upload the extension ZIP. Upload the source ZIP when asked whether the add-on uses a build step. Build command: npm ci && npm run build. Copy the reviewer notes into the reviewer instructions field when available.
+Sign in with GitHub CLI and configure a Git author in this repository. Store the Mozilla JWT issuer and secret as a generic Windows Credential Manager credential. An existing credential from the same Mozilla account can be reused without modifying another add-on or repository.
 
-The developer account owner must review and accept Mozilla's developer distribution agreement and other applicable legal terms. No account has been created and no agreement has been accepted by this project.
+Create ignored `release.local.json` with nonsecret settings only:
 
-Only Mozilla can issue the signed XPI; the existing local ZIP is unsigned. After signing is approved, download Mozilla's XPI. In Firefox open about:addons, select the gear menu, choose Install Add-on From File, and select that signed XPI. Firefox will verify the signature during installation. Unlike temporary loading, a signed installation persists through restarts.
+```json
+{
+  "credentialTarget": "ai-usage-monitor-amo",
+  "gitHubCli": "gh"
+}
+```
 
-Use the same add-on ID for updates; increment the manifest/package version before submitting a new signed build. The current ID is ai-usage-monitor@local.extension. Keep publisher credentials out of source control and chat. No signing API credentials are required for the manual upload path.
+`gitHubCli` may be an absolute path. Alternatively pass `-CredentialTarget` and `-GitHubCli` to PowerShell. Never put credential values in this file. The password is trimmed in memory, passed only through `WEB_EXT_API_SECRET` for the signing process alongside `WEB_EXT_API_KEY`, and both variables are removed afterward. No signing credential is written to a file, commit, archive, log, or GitHub secret. Publishing runs after these variables are cleared.
+
+## Release commands
+
+Run from a clean, committed checkout on the default branch:
+
+```powershell
+npm run release:prepare # Validate and build only; no credential access or publication.
+npm run release:new     # Bump the patch version, validate, sign, and publish.
+npm run release         # Current version or resume; do not bump a pending release.
+```
+
+Equivalent: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/release-extension.ps1 -Bump`.
+
+The command creates distribution and original source ZIPs, submits an unlisted version with source and reviewer notes to Mozilla API v5, waits up to 15 minutes, and downloads the approved XPI. It checks Mozilla's SHA-256, manifest identity/version/update URL, signature-file presence, and every original package file. Firefox verifies the cryptographic signature during installation. The signing code uses Node built-ins and the existing archive library, with no additional dependency.
+
+The publisher pushes committed source, creates a GitHub release with signed XPI and source ZIP, then commits and pushes `docs/updates.json` with the exact XPI hash. It checks the origin and default branch before pushing. Failed checks, rejected or pending signing, and mismatched packages prevent feed publication. Resume after interruption with `npm run release`: an existing signed version is reused, while a different payload under the same version is refused. Mozilla review can delay signing; API credentials do not bypass review. This is a local command workflow, not a scheduled cloud job holding signing credentials.
+
+## Installation and updates
+
+Install the signed XPI from https://github.com/demilio5/ai-usage-monitor/releases/latest. Existing versions without an update URL need this one-time manual update. Install over the same add-on ID to retain settings and history. Firefox discovers future higher versions from the HTTPS feed. Request an immediate check in `about:addons`, gear, Check for Updates.
+
+Manual AMO upload remains at https://addons.mozilla.org/en-US/developers/addon/64d9e49aecb24c479ea6/versions. Choose unlisted distribution and upload both generated ZIPs. Local settings, usage-history CSV exports, build artifacts, and signed downloads are excluded from Git.

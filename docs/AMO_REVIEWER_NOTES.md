@@ -1,4 +1,4 @@
-# Mozilla reviewer notes — AI Usage Monitor 1.0.6
+# Mozilla reviewer notes — AI Usage Monitor
 
 Distribution requested: unlisted, signed self-distribution. The signed XPI is intended for permanent installation in desktop Firefox; this submission is not a request for a public AMO listing.
 
@@ -53,3 +53,5 @@ Optional notifications: off by default, requested only when enabled in Settings.
 5. With a signed-in session, compare reported percentages/reset times to service dashboards. On failures, previous readings remain marked stale; expiry never invents a 100% replenishment.
 
 Privacy details: PRIVACY.md. Security model: SECURITY.md. MIT reference-project copyrights: THIRD_PARTY_NOTICES.md, also packaged in the extension. These public open-source provider schemas informed a new TypeScript implementation; entire upstream extensions are not bundled.
+
+The extension uses the unlisted distribution channel with an HTTPS update feed at https://demilio5.github.io/ai-usage-monitor/updates.json. Signed XPIs and SHA-256 update hashes are published in its own GitHub repository. Signing credentials are Windows Credential Manager entries and are never included in the extension or source archive.
