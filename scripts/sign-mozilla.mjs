@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { mozillaClient } from './mozilla-api.mjs';
+import { mozillaClient, mozillaSignedDownload } from './mozilla-api.mjs';
 import { verifySignedXpi } from './release-utils.mjs';
 
 export async function signRelease({
@@ -10,6 +10,7 @@ export async function signRelease({
   source,
   notes,
   request,
+  authenticatedDownload,
   fetcher = fetch,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   now = Date.now,
@@ -86,8 +87,11 @@ export async function signRelease({
       !['addons.mozilla.org', 'addons.cdn.mozilla.net'].includes(url.hostname)
     )
       throw new Error('Signed download URL is outside Mozilla HTTPS hosts.');
-    // No signing credentials or Authorization header are sent to file downloads.
-    const response = await fetcher(url, { redirect: 'manual', signal: AbortSignal.timeout(60000) });
+    // Only the initial API download is authenticated; CDN redirects carry no credentials.
+    const response =
+      redirects === 0 && authenticatedDownload
+        ? await authenticatedDownload(version.file.id)
+        : await fetcher(url, { redirect: 'manual', signal: AbortSignal.timeout(60000) });
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       url = new URL(response.headers.get('location'), url);
       continue;
@@ -114,6 +118,7 @@ async function main() {
     source: await readFile(`artifacts/ai-usage-monitor-source-${manifest.version}.zip`),
     notes: await readFile('docs/AMO_REVIEWER_NOTES.md', 'utf8'),
     request: mozillaClient({ issuer, secret }),
+    authenticatedDownload: mozillaSignedDownload({ issuer, secret }),
   });
   await mkdir('artifacts', { recursive: true });
   const output = `artifacts/ai-usage-monitor-${manifest.version}.xpi`;

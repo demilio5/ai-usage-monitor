@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { createHash, createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { zipSync, strToU8 } from 'fflate';
-import { createJwt, mozillaClient } from '../scripts/mozilla-api.mjs';
+import { createJwt, mozillaClient, mozillaSignedDownload } from '../scripts/mozilla-api.mjs';
 import { signRelease } from '../scripts/sign-mozilla.mjs';
 import { verifySignedXpi, updateFeed } from '../scripts/release-utils.mjs';
 
@@ -32,6 +32,7 @@ const approved = {
   channel: 'unlisted',
   is_disabled: false,
   file: {
+    id: 123,
     status: 'public',
     is_mozilla_signed_extension: false,
     url: 'https://addons.mozilla.org/file/fixture.xpi',
@@ -158,6 +159,24 @@ it('does not follow a signed-file redirect outside Mozilla hosts', async () => {
   );
   await expect(signRelease(options)).rejects.toThrow('outside Mozilla');
   expect(options.fetcher).toHaveBeenCalledTimes(1);
+});
+it('downloads unlisted files with scoped API authentication and drops it on CDN redirects', async () => {
+  const fetcher = vi.fn(
+    async () =>
+      new Response(null, {
+        status: 302,
+        headers: { location: 'https://addons.cdn.mozilla.net/fixture.xpi' },
+      }),
+  );
+  const download = mozillaSignedDownload({ issuer: 'fixture', secret: 'fixture-secret', fetcher });
+  const options = { ...signingOptions(), authenticatedDownload: download };
+  expect(await signRelease(options)).toEqual(signed);
+  expect(fetcher.mock.calls[0][0]).toBe('https://addons.mozilla.org/api/v4/file/123/');
+  expect(fetcher.mock.calls[0][1].headers.Authorization).toMatch(/^JWT /);
+  expect(fetcher.mock.calls[0][1].redirect).toBe('manual');
+  expect(options.fetcher.mock.calls[0][1].headers).toBeUndefined();
+  await expect(download('../other')).rejects.toThrow('invalid signed-file');
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });
 it('rejects tampered hashes, changed payloads, unsigned packages, and the wrong extension identity', () => {
   expect(() => verifySignedXpi(signed, archive, manifest, hash(signed))).not.toThrow();

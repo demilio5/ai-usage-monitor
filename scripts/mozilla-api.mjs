@@ -6,6 +6,24 @@ export function createJwt(issuer, secret, now = Math.floor(Date.now() / 1000)) {
   const message = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ iss: issuer, jti: randomUUID(), iat: now, exp: now + 60 })}`;
   return `${message}.${createHmac('sha256', secret).update(message).digest('base64url')}`;
 }
+
+// Unlisted XPIs require the authenticated legacy signing download endpoint.
+// Return redirects to the caller so authorization never follows them to a CDN.
+export function mozillaSignedDownload({ issuer, secret, fetcher = fetch }) {
+  return async (id) => {
+    if (!Number.isSafeInteger(id) || id <= 0)
+      throw new Error('Mozilla returned an invalid signed-file ID.');
+    try {
+      return await fetcher(`https://addons.mozilla.org/api/v4/file/${id}/`, {
+        headers: { Authorization: `JWT ${createJwt(issuer, secret)}` },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(60000),
+      });
+    } catch {
+      throw new Error('Mozilla signed-file network request failed.');
+    }
+  };
+}
 export function mozillaClient({ issuer, secret, fetcher = fetch }) {
   if (!issuer || !secret) throw new Error('Mozilla signing credentials are missing.');
   return async (path, options = {}, allowMissing = false) => {
