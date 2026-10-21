@@ -76,3 +76,9 @@ The release pipeline authenticates only the initial Mozilla API download, strips
 Scoped popup styling adds neutral light/dark surfaces, aligned column labels, 18px numeric readings, 13px reset dates, 12px countdowns, connection pills and distinct forecast summaries. Refresh and Settings share the header; the footer retains history access and version information. All three enabled services use compact spacing to preserve the no-scroll requirement. Provider collection and forecast calculations are unchanged.
 
 Validation: 117 automated tests, strict TypeScript, build and self-hosted Mozilla validation pass. All ten Firefox checks pass; populated light two-service layout measures 520 x 576.8px and dark three-service layout 520 x 579px, including extra caps. Both screenshots were visually inspected. Early spacing variants exceeded the height budget and were revised before release.
+
+## Separate Claude forecasts — version 1.0.9
+
+The popup now shows Session (five_hour) and Weekly (seven_day) forecasts on separate labeled lines. Each uses its own allowance, cycle, consumption history and freshness checks; the summary no longer switches implicitly to whichever percentage is lowest. Codex selection is unchanged. Minor spacing adjustments preserve readable font sizes and the no-scroll layout.
+
+Validation: 117 automated tests, strict TypeScript, build and Mozilla lint pass. Ten Firefox 158.0.1 checks pass. Synthetic session and weekly histories produce distinct 40%/h and 4%/h estimates, and an expired session leaves the weekly estimate usable. Light/dark maximum fixtures remain below 580px; screenshots were visually inspected. One Firefox startup attempt exited before initialization; a retry started normally. Forecast assertions now use atomic DOM snapshots to avoid refresh-related stale element races.

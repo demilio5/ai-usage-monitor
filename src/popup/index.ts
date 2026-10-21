@@ -123,25 +123,42 @@ function render() {
       const limiting = (active.length ? active : p.quotas).reduce((a, b) =>
         a.remaining < b.remaining ? a : b,
       );
-      const f =
-        isStale || !current(limiting)
-          ? null
-          : forecast(
-              state.history,
-              id,
-              limiting,
-              state.settings.forecastHours,
-              Date.now(),
-              p.account,
-              state.settings.interval,
-              state.settings.idleAware,
-            );
-      const line = el('p', 'compact-detail muted', forecastText(f));
-      line.classList.add('forecast-summary');
-      line.title = f
-        ? `${limiting.label}: ${f.message}${f.usedAtReset === null ? '' : ` Estimated used at reset: ${f.usedAtReset.toFixed(0)}%.`} Reported consumption; remaining is calculated.`
-        : p.detail;
-      card.append(line);
+      const forecastQuotas =
+        id === 'claude'
+          ? ['five_hour', 'seven_day']
+              .map((window) => p.quotas.find((q) => q.id === window))
+              .filter((q) => q !== undefined)
+          : [limiting];
+      const summary = el('div', 'forecast-summary');
+      for (const target of forecastQuotas) {
+        const f =
+          isStale || !current(target)
+            ? null
+            : forecast(
+                state.history,
+                id,
+                target,
+                state.settings.forecastHours,
+                Date.now(),
+                p.account,
+                state.settings.interval,
+                state.settings.idleAware,
+              );
+        const line = el('p', 'compact-detail muted', forecastText(f));
+        if (id === 'claude') {
+          const label = el(
+            'span',
+            'forecast-label',
+            target.id === 'five_hour' ? 'Session' : 'Weekly',
+          );
+          line.prepend(label);
+        }
+        line.title = f
+          ? `${target.label}: ${f.message}${f.usedAtReset === null ? '' : ` Estimated used at reset: ${f.usedAtReset.toFixed(0)}%.`} Reported consumption; remaining is calculated.`
+          : p.detail;
+        summary.append(line);
+      }
+      card.append(summary);
     }
     const footer = el('div', 'spread compact-footer');
     footer.append(

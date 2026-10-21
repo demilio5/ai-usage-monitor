@@ -78,7 +78,7 @@ try {
     if (!bytes.equals(published))
       throw new Error('An existing GitHub release contains a different XPI; bump the version.');
   } else {
-    const notes = `AI Usage Monitor ${version}. Signed by Mozilla for unlisted distribution. Refined popup typography, aligned quota columns, clearer reset dates and forecast summaries. Includes automatic Firefox updates.\n`;
+    const notes = `AI Usage Monitor ${version}. Signed by Mozilla for unlisted distribution. Claude now shows independent Session (5-hour) and Weekly forecasts with labeled consumption rates. Includes automatic Firefox updates.\n`;
     await writeFile('artifacts/release-notes.md', notes);
     api(
       'release',

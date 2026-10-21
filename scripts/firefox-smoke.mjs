@@ -147,6 +147,14 @@ try {
             remaining: 100 - used,
             resetAt: q.resetAt + [437, -183, 445][i],
           }));
+          s.history.push(
+            ...s.history.map((p, i) => ({
+              ...p,
+              id: 'seven_day',
+              used: 8 + i,
+              remaining: 92 - i,
+            })),
+          );
           await browser.storage.local.set({ monitor: s });
           done();
         })
@@ -154,14 +162,23 @@ try {
     );
     await driver.get(`moz-extension://${uuid}/popup.html`);
     await driver.wait(until.elementLocated(By.css('progress')), 10000);
-    const text = await driver.findElement(By.css('body')).getText();
-    assert.match(text, /72%/);
-    assert.match(await driver.findElement(By.css('.reset-hours')).getText(), /2h 0m left/);
-    assert.ok(
-      (await driver.findElement(By.css('time.reset-date')).getAttribute('datetime')).endsWith('Z'),
-    );
-    assert.ok(!(await driver.findElement(By.css('.reset-date')).getText()).includes('left'));
-    assert.match(text, /40.0%\/h/);
+    const snapshot = await driver.executeScript(() => ({
+      text: document.body.innerText,
+      hours: document.querySelector('.reset-hours').textContent,
+      date: document.querySelector('.reset-date').textContent,
+      iso: document.querySelector('time.reset-date').getAttribute('datetime'),
+      forecasts: [...document.querySelectorAll('.claude .forecast-summary .compact-detail')].map(
+        (p) => p.textContent,
+      ),
+    }));
+    assert.match(snapshot.text, /72%/);
+    assert.match(snapshot.hours, /2h 0m left/);
+    assert.ok(snapshot.iso.endsWith('Z'));
+    assert.ok(!snapshot.date.includes('left'));
+    const forecasts = snapshot.forecasts;
+    assert.equal(forecasts.length, 2);
+    assert.match(forecasts[0], /Session.*40.0%\/h/s);
+    assert.match(forecasts[1], /Weekly.*4.0%\/h/s);
 
     assert.equal((await driver.findElements(By.css('.chart svg'))).length, 0);
     console.log(
@@ -236,11 +253,13 @@ try {
         const weekly = s.providers.claude.quotas[1];
         weekly.used = 28;
         weekly.remaining = 72;
-        s.history = s.history.map((p, i) => ({
-          ...p,
-          id: weekly.id,
-          resetAt: weekly.resetAt + [437, -183, 445][i],
-        }));
+        s.history = s.history
+          .filter((p) => p.id === 'five_hour')
+          .map((p, i) => ({
+            ...p,
+            id: weekly.id,
+            resetAt: weekly.resetAt + [437, -183, 445][i],
+          }));
         await browser.storage.local.set({ monitor: s });
         done();
       }),
@@ -251,7 +270,9 @@ try {
     const snapshot = await driver.wait(
       () =>
         driver.executeScript(() => {
-          const summary = document.querySelector('.claude .compact-detail')?.textContent;
+          const summary = document.querySelector(
+            '.claude .forecast-summary .compact-detail:last-child',
+          )?.textContent;
           if (!summary?.includes('40.0%/h')) return false;
           return [...document.querySelectorAll('.claude progress')].map((meter) =>
             meter.getAttribute('aria-label'),
