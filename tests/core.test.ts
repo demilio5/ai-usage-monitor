@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { percentage, resetTime, color, quota } from '../src/calculations/quota';
-import { forecast } from '../src/calculations/forecasting';
+import { forecast, forecastText, weeklyPace } from '../src/calculations/forecasting';
 import { badge, selectQuota, tooltip } from '../src/toolbar/badge';
 import { emptyStore, validateSettings } from '../src/storage/settings';
 import { appendHistory, exportCSV, pruneHistory } from '../src/storage/history';
@@ -339,7 +339,7 @@ it('explains incompatible long refresh and lookback settings without extending l
 it('distinguishes exhausted, zero consumption, insufficient, and stale forecast messages', async () => {
   const { forecastText } = await import('../src/calculations/forecasting');
   expect(forecastText(null)).toContain('stale');
-  expect(forecastText(forecast([], 'claude', q, 3, now))).toBe('Forecast: insufficient data');
+  expect(forecastText(forecast([], 'claude', q, 3, now))).toBe('Forecast: need 3 more readings');
   expect(forecastText(forecast(series([40, 40, 40]), 'claude', q, 3, now))).toBe(
     'Forecast: no consumption observed',
   );
@@ -386,4 +386,48 @@ it('keeps actual resets, missing reset times, and account boundaries separate wi
   expect(
     forecast(series([20, 30, 40], q.resetAt! + 100), 'claude', q, 3, now, 'other-account').rate,
   ).toBeNull();
+});
+
+it('explains exactly which readings or sample span a forecast still needs', () => {
+  expect(forecast([], 'claude', q, 3, now).message).toBe('Need 3 more readings');
+  expect(forecast(series([30, 40]), 'claude', q, 3, now).message).toBe('Need 1 more reading');
+  expect(forecast(series([20, 30, 40], q.resetAt, 60000), 'claude', q, 3, now).message).toBe(
+    'Need 13 more minutes of readings',
+  );
+  expect(forecast(series([80, 90, 20]), 'claude', q, 3, now).samples).toBe(1);
+  expect(forecast(series([80, 90, 20]), 'claude', q, 3, now).message).toBe('Need 2 more readings');
+  expect(forecast(series([20, 30, 40]), 'claude', q, 3, now + 1800000).message).toContain(
+    'too old',
+  );
+  expect(forecast([], 'claude', { ...q, resetAt: now - 1 }, 3, now).message).toBe(
+    'Awaiting reset update',
+  );
+});
+it('shows reset-aware forecasts only when a known reset precedes exhaustion', () => {
+  expect(forecastText(forecast(series([20, 30, 40]), 'claude', q, 3, now))).toContain(
+    'Likely to reset before empty',
+  );
+  expect(forecastText(forecast(series([0, 20, 40]), 'claude', q, 3, now))).toContain(
+    'Estimated time left',
+  );
+  const unknown = { ...q, resetAt: null };
+  expect(forecast(series([20, 30, 40], null), 'claude', unknown, 3, now).resetsBeforeEmpty).toBe(
+    false,
+  );
+});
+it('compares observed weekly pace with the remaining budget until reset', () => {
+  const weekly = { ...q, id: 'seven_day' };
+  const f = forecast(series([20, 30, 40]), 'claude', q, 3, now);
+  expect(weeklyPace(weekly, f, now)).toEqual({ label: 'On track', budgetRate: 60 });
+  expect(weeklyPace({ ...weekly, resetAt: now + 10 * 3600000 }, f, now)).toEqual({
+    label: 'Over budget',
+    budgetRate: 6,
+  });
+  expect(weeklyPace(q, f, now)).toBeNull();
+  expect(weeklyPace(weekly, null, now)).toBeNull();
+  expect(weeklyPace({ ...weekly, resetAt: now - 1 }, f, now)).toBeNull();
+  expect(weeklyPace({ ...weekly, resetAt: null }, f, now)).toBeNull();
+  expect(
+    weeklyPace({ ...weekly, id: 'primary_window', durationMs: 604800000 }, f, now)?.label,
+  ).toBe('On track');
 });
