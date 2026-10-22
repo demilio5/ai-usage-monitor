@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { percentage, resetTime, color, quota } from '../src/calculations/quota';
-import { forecast, forecastText, weeklyPace } from '../src/calculations/forecasting';
+import { forecast, forecastText, weeklyPace, forecastDate } from '../src/calculations/forecasting';
 import { badge, selectQuota, tooltip } from '../src/toolbar/badge';
 import { emptyStore, validateSettings } from '../src/storage/settings';
 import { appendHistory, exportCSV, pruneHistory } from '../src/storage/history';
@@ -430,4 +430,24 @@ it('compares observed weekly pace with the remaining budget until reset', () => 
   expect(
     weeklyPace({ ...weekly, id: 'primary_window', durationMs: 604800000 }, f, now)?.label,
   ).toBe('On track');
+});
+
+it('formats a weekly exhaustion estimate as a local date with an exact timestamp', () => {
+  const later = { ...q, resetAt: now + 10 * 3600000 };
+  const f = forecast(series([20, 30, 40], later.resetAt), 'claude', later, 3, now);
+  const display = forecastDate(f, now, 'en-US', 'America/New_York');
+  expect(display?.label).toBe('Est. Oct 19');
+  expect(display?.iso).toBe('2026-10-19T20:30:00.000Z');
+  expect(display?.title).toContain('4:30 PM');
+  expect(display?.title).toContain('Estimated empty');
+  expect(forecastDate(null, now)).toBeNull();
+  expect(forecastDate({ ...f, rate: 0 }, now)).toBeNull();
+  expect(forecastDate({ ...f, resetsBeforeEmpty: true }, now)).toBeNull();
+  expect(forecastDate({ ...f, exhaustionMs: Infinity }, now)).toBeNull();
+});
+it('includes the local year when a forecast crosses into the next year', () => {
+  const later = { ...q, resetAt: now + 10 * 3600000 };
+  const f = forecast(series([20, 30, 40], later.resetAt), 'claude', later, 3, now);
+  const boundary = Date.parse('2026-12-31T23:30:00Z');
+  expect(forecastDate(f, boundary, 'en-US', 'UTC')?.label).toBe('Est. Jan 1, 2027');
 });

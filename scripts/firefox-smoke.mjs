@@ -249,6 +249,46 @@ try {
       'base64',
     );
   });
+  await run(
+    'weekly exhaustion badge shows a local forecast date instead of over budget',
+    async () => {
+      await script((done) =>
+        browser.runtime.sendMessage({ type: 'read' }).then(async (s) => {
+          const weekly = s.providers.claude.quotas.find((q) => q.id === 'seven_day');
+          weekly.resetAt = Date.now() + 7 * 86400000;
+          s.history = s.history.map((p) =>
+            p.id === 'seven_day' ? { ...p, resetAt: weekly.resetAt } : p,
+          );
+          await browser.storage.local.set({ monitor: s });
+          done();
+        }),
+      );
+      await driver.wait(
+        () => driver.executeScript(() => !!document.querySelector('.claude time.pace-risk')),
+        10000,
+      );
+      const badge = await driver.executeScript(() => {
+        const node = document.querySelector('.claude time.pace-risk');
+        return {
+          text: node.textContent,
+          title: node.title,
+          iso: node.getAttribute('datetime'),
+          body: document.body.innerText,
+          height: document.body.getBoundingClientRect().height,
+        };
+      });
+      assert.match(badge.text, /^Est\. /);
+      assert.match(badge.title, /Estimated empty/);
+      assert.ok(Number.isFinite(Date.parse(badge.iso)));
+      assert.ok(!badge.body.includes('Over budget'));
+      assert.ok(badge.height <= 580);
+      await writeFile(
+        'artifacts/firefox-popup-forecast-date.png',
+        await driver.findElement(By.css('body')).takeScreenshot(),
+        'base64',
+      );
+    },
+  );
   await run('expired short window leaves current weekly readings and forecast usable', async () => {
     await script((done) =>
       browser.runtime.sendMessage({ type: 'read' }).then(async (s) => {

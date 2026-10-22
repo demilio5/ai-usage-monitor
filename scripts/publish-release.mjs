@@ -78,7 +78,7 @@ try {
     if (!bytes.equals(published))
       throw new Error('An existing GitHub release contains a different XPI; bump the version.');
   } else {
-    const notes = `AI Usage Monitor ${version}. Signed by Mozilla for unlisted distribution. Adds reset-aware forecast summaries, a weekly usage pace indicator, specific missing-data explanations, stale-reading retry actions, and installed-version/update information with release notes in Settings.\n`;
+    const notes = `AI Usage Monitor ${version}. Signed by Mozilla for unlisted distribution. Replaces the weekly Over budget label with the estimated local exhaustion date. Hover for the full date, time and timezone. On track remains when the allowance should last until reset.\n`;
     await writeFile('artifacts/release-notes.md', notes);
     api(
       'release',

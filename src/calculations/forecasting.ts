@@ -1,5 +1,5 @@
 import type { Observation, Quota, ProviderId } from '../providers/types';
-import { duration } from '../utils/time';
+import { duration, resetDisplay } from '../utils/time';
 import { sameResetCycle } from './quota';
 export interface Forecast {
   rate: number | null;
@@ -124,4 +124,28 @@ export function weeklyPace(q: Quota, f: Forecast | null, now = Date.now()) {
     return null;
   const budgetRate = q.remaining / ((q.resetAt - now) / 3600000);
   return { label: f.rate <= budgetRate ? 'On track' : 'Over budget', budgetRate };
+}
+
+export function forecastDate(
+  f: Forecast | null,
+  now = Date.now(),
+  locale?: string,
+  timeZone?: string,
+) {
+  if (
+    !f ||
+    f.rate === null ||
+    f.rate <= 0 ||
+    f.exhaustionMs === null ||
+    !Number.isFinite(f.exhaustionMs) ||
+    f.resetsBeforeEmpty
+  )
+    return null;
+  const display = resetDisplay(now + f.exhaustionMs, now, locale, timeZone);
+  if (!display.iso) return null;
+  return {
+    label: `Est. ${display.date}`,
+    title: `${display.title.replace(/^Resets /, 'Estimated empty ')} · Based on recent observed consumption; actual usage may vary.`,
+    iso: display.iso,
+  };
 }

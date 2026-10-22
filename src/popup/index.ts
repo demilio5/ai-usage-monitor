@@ -3,7 +3,7 @@ import { el, button, theme } from '../ui/dom';
 import { color, current } from '../calculations/quota';
 import { stale } from '../background/scheduler';
 import { age, resetDisplay } from '../utils/time';
-import { forecast, forecastText, weeklyPace } from '../calculations/forecasting';
+import { forecast, forecastText, weeklyPace, forecastDate } from '../calculations/forecasting';
 let state: Store;
 let busy = false;
 let connectionError = '';
@@ -147,12 +147,16 @@ function render() {
         const line = el('p', 'compact-detail muted', forecastText(f));
         const pace = weeklyPace(target, f);
         if (pace) {
+          const estimate = pace.label === 'Over budget' ? forecastDate(f) : null;
           const indicator = el(
-            'span',
+            estimate ? 'time' : 'span',
             `pace ${pace.label === 'On track' ? 'pace-ok' : 'pace-risk'}`,
-            pace.label,
+            estimate?.label ?? (pace.label === 'On track' ? 'On track' : 'Est. unavailable'),
           );
-          indicator.title = `Observed net consumption compared with your remaining weekly budget: ${pace.budgetRate.toFixed(1)}%/h available until reset. Estimates assume the observed pace continues.`;
+          if (estimate) indicator.setAttribute('datetime', estimate.iso);
+          indicator.title =
+            estimate?.title ??
+            `Observed net consumption compared with your remaining weekly budget: ${pace.budgetRate.toFixed(1)}%/h available until reset. Estimates assume the observed pace continues.`;
           line.append(indicator);
         }
         if (id === 'claude') {

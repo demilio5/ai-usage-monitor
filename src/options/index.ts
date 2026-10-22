@@ -1,5 +1,5 @@
 import { chart } from '../ui/chart';
-import { forecast, forecastText, weeklyPace } from '../calculations/forecasting';
+import { forecast, forecastText, weeklyPace, forecastDate } from '../calculations/forecasting';
 import { stale } from '../background/scheduler';
 import { current } from '../calculations/quota';
 import { countdown } from '../utils/time';
@@ -82,12 +82,13 @@ function render() {
         ),
       );
       const pace = weeklyPace(q, f);
+      const estimate = pace?.label === 'Over budget' ? forecastDate(f) : null;
       if (pace)
         row.append(
           el(
             'p',
             'muted',
-            `Weekly pace: ${pace.label}. Remaining budget supports ${pace.budgetRate.toFixed(1)}%/h until reset. Based on recent observed consumption.`,
+            `${estimate ? estimate.title : `Weekly pace: ${pace.label}.`} Remaining budget supports ${pace.budgetRate.toFixed(1)}%/h until reset. Based on recent observed consumption.`,
           ),
         );
       readings.append(row);
