@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "incognito": "not_allowed",
   "name": "AI Usage Monitor",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Monitor reported Claude subscription quotas locally, with forecasts, history, and transparent Codex connection diagnostics.",
   "permissions": [
     "storage",
