@@ -3,7 +3,7 @@ import { el, button, theme } from '../ui/dom';
 import { color, current } from '../calculations/quota';
 import { stale } from '../background/scheduler';
 import { age, resetDisplay } from '../utils/time';
-import { forecast, forecastText } from '../calculations/forecasting';
+import { forecast, forecastText, weeklyPace } from '../calculations/forecasting';
 let state: Store;
 let busy = false;
 let connectionError = '';
@@ -145,6 +145,16 @@ function render() {
                 state.settings.idleAware,
               );
         const line = el('p', 'compact-detail muted', forecastText(f));
+        const pace = weeklyPace(target, f);
+        if (pace) {
+          const indicator = el(
+            'span',
+            `pace ${pace.label === 'On track' ? 'pace-ok' : 'pace-risk'}`,
+            pace.label,
+          );
+          indicator.title = `Observed net consumption compared with your remaining weekly budget: ${pace.budgetRate.toFixed(1)}%/h available until reset. Estimates assume the observed pace continues.`;
+          line.append(indicator);
+        }
         if (id === 'claude') {
           const label = el(
             'span',
@@ -161,12 +171,34 @@ function render() {
       card.append(summary);
     }
     const footer = el('div', 'spread compact-footer');
-    footer.append(
-      el('span', 'muted', p.lastSuccess ? `Updated ${age(p.lastSuccess)}` : 'No reading yet'),
+    const timestamp = el(
+      'span',
+      'muted',
+      isStale && p.lastSuccess
+        ? `Last successful refresh ${age(p.lastSuccess)}`
+        : p.lastSuccess
+          ? `Updated ${age(p.lastSuccess)}`
+          : 'No successful refresh yet',
     );
+    if (p.lastSuccess) timestamp.title = new Date(p.lastSuccess).toLocaleString();
+    footer.append(timestamp);
+    const footerActions = el('div', 'spread card-actions');
+    if (isStale && id !== 'chatgpt') {
+      const retry = button(
+        busy ? 'Retrying…' : 'Retry',
+        () => refresh(true),
+        'quiet retry-connection',
+      );
+      retry.disabled = busy;
+      retry.title =
+        'Retry connections; server cooldowns and the one-minute manual retry limit still apply.';
+      retry.setAttribute('aria-label', `Retry ${NAMES[id]} connection`);
+      footerActions.append(retry);
+    }
     const link = button('Details ↗', () => details('#readings'), 'quiet');
     link.setAttribute('aria-label', `${NAMES[id]} connection details`);
-    footer.append(link);
+    footerActions.append(link);
+    footer.append(footerActions);
     card.append(footer);
     app.append(card);
   }

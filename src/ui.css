@@ -507,6 +507,21 @@ footer {
   font-weight: 600;
   color: var(--text);
 }
+.pace {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: auto;
+}
+.pace-ok {
+  color: var(--accent);
+}
+.pace-risk {
+  color: var(--warning);
+}
+.popup .card-actions {
+  gap: 6px;
+}
 .compact-footer {
   margin-top: 5px;
 }

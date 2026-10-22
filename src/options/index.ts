@@ -1,5 +1,5 @@
 import { chart } from '../ui/chart';
-import { forecast, forecastText } from '../calculations/forecasting';
+import { forecast, forecastText, weeklyPace } from '../calculations/forecasting';
 import { stale } from '../background/scheduler';
 import { current } from '../calculations/quota';
 import { countdown } from '../utils/time';
@@ -81,6 +81,15 @@ function render() {
             : forecastText(f),
         ),
       );
+      const pace = weeklyPace(q, f);
+      if (pace)
+        row.append(
+          el(
+            'p',
+            'muted',
+            `Weekly pace: ${pace.label}. Remaining budget supports ${pace.budgetRate.toFixed(1)}%/h until reset. Based on recent observed consumption.`,
+          ),
+        );
       readings.append(row);
     }
   }
@@ -364,6 +373,30 @@ function render() {
     ),
   );
   app.append(diagnostics);
+  const updates = el('section', 'card');
+  updates.id = 'updates';
+  const manifest = browser.runtime.getManifest();
+  const configured =
+    manifest.browser_specific_settings?.gecko?.update_url ===
+    'https://demilio5.github.io/ai-usage-monitor/updates.json';
+  updates.append(
+    el('h2', '', 'Updates'),
+    el('p', '', `Installed version: ${manifest.version}`),
+    el(
+      'p',
+      'muted',
+      configured
+        ? 'Automatic update feed configured. Firefox manages update checks; your Firefox automatic-update preference applies.'
+        : 'No automatic update feed configured.',
+    ),
+    el('p', 'muted', 'Check now in Firefox → Add-ons and themes → gear menu → Check for Updates.'),
+  );
+  const releaseNotes = el('a', '', 'Release notes ↗');
+  releaseNotes.href = `https://github.com/demilio5/ai-usage-monitor/releases/tag/v${manifest.version}`;
+  releaseNotes.target = '_blank';
+  releaseNotes.rel = 'noopener noreferrer';
+  updates.append(releaseNotes);
+  app.append(updates);
   if (location.hash)
     requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
   app.append(

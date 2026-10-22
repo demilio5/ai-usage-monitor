@@ -179,6 +179,9 @@ try {
     assert.equal(forecasts.length, 2);
     assert.match(forecasts[0], /Session.*40.0%\/h/s);
     assert.match(forecasts[1], /Weekly.*4.0%\/h/s);
+    assert.match(forecasts[1], /Likely to reset before empty/);
+    assert.match(forecasts[1], /On track/);
+    assert.match(snapshot.text, /Forecast: need 3 more readings/);
 
     assert.equal((await driver.findElements(By.css('.chart svg'))).length, 0);
     console.log(
@@ -286,6 +289,16 @@ try {
   await run('history graphs and range selector are available in settings', async () => {
     await driver.get(`moz-extension://${uuid}/options.html#history`);
     await driver.wait(until.elementLocated(By.css('.chart svg')), 10000);
+    const updates = await driver.executeScript(() => ({
+      text: document.querySelector('#updates').textContent,
+      url: document.querySelector('#updates a').getAttribute('href'),
+    }));
+    assert.match(updates.text, /Automatic update feed configured/);
+    assert.ok(updates.text.includes(`Installed version: ${version}`));
+    assert.equal(
+      updates.url,
+      `https://github.com/demilio5/ai-usage-monitor/releases/tag/v${version}`,
+    );
     assert.ok(
       await driver.executeScript(() =>
         [...document.querySelectorAll('.chart svg path')].some((path) =>
@@ -317,6 +330,20 @@ try {
     const readings = await driver.findElement(By.css('#readings')).getText();
     assert.match(readings, /Last known readings · stale/);
     assert.doesNotMatch(readings, /40.0%\/h/);
+  });
+  await run('stale popup exposes last successful refresh and a retry action', async () => {
+    await driver.get(`moz-extension://${uuid}/popup.html`);
+    await driver.wait(until.elementLocated(By.css('.claude .retry-connection')), 10000);
+    const status = await driver.executeScript(() => ({
+      footer: document.querySelector('.claude .compact-footer').textContent,
+      forecast: document.querySelector('.claude .forecast-summary').textContent,
+      retry: document.querySelector('.claude .retry-connection').getAttribute('aria-label'),
+      pace: document.querySelector('.claude .pace'),
+    }));
+    assert.match(status.footer, /Last successful refresh/);
+    assert.match(status.forecast, /stale/);
+    assert.equal(status.retry, 'Retry Claude + Claude Code connection');
+    assert.equal(status.pace, null);
   });
   await run('history clear requires confirmation and clears observations', async () => {
     await driver.get(`moz-extension://${uuid}/options.html`);
