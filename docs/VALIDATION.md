@@ -106,3 +106,5 @@ Verification: six focused version tests and 128 tests overall; strict TypeScript
 ## Version 1.1.0 release preparation — 2026-10-25
 
 Explicitly prepared the minor release at the user's request, promoting Unreleased version-history and Git-backfill notes. Package/lock metadata, generated manifest, header and latest changelog entry agree on 1.1.0. Six focused version tests, 128 tests overall, strict TypeScript, build, self-hosted Mozilla validation and thirteen Firefox checks pass. The release page and update feed are verified separately after signing/publication; no pending submission is treated as a published update.
+
+Version 1.1.0 publication verified: Mozilla-signed XPI accepted for permanent installation in a disposable Firefox profile, with the runtime header and latest Version History entry both reading 1.1.0. Cache-busted requests confirmed the public GitHub release notes, exact signed download bytes, and live update-feed version/hash. One supplementary browser navigation attempt omitted the existing harness automation flag and was blocked; rerunning with that flag passed. No normal Firefox profile or user account session was modified.
