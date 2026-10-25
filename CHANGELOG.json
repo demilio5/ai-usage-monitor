@@ -1,15 +1,21 @@
 {
-  "unreleased": {
-    "Added": [
-      "Clickable header version and a local Version History page backed by this changelog.",
-      "Release preparation supports patch, minor and major versions with synchronization checks."
-    ],
-    "Changed": [
-      "Package metadata is the authoritative version; builds generate the Firefox manifest and history data.",
-      "Expand older dashboard entries with verified Git commit references and Eastern implementation dates."
-    ]
-  },
+  "unreleased": {},
   "releases": [
+    {
+      "version": "1.1.0",
+      "date": "2026-10-25",
+      "source": "Release preparation date (US Eastern)",
+      "changes": {
+        "Added": [
+          "Clickable header version and a local Version History page backed by this changelog.",
+          "Release preparation supports patch, minor and major versions with synchronization checks."
+        ],
+        "Changed": [
+          "Package metadata is the authoritative version; builds generate the Firefox manifest and history data.",
+          "Expand older dashboard entries with verified Git commit references and Eastern implementation dates."
+        ]
+      }
+    },
     {
       "version": "1.0.11",
       "date": "2026-10-22",
@@ -39,7 +45,9 @@
       "date": "2026-10-21",
       "source": "Implementation: d7bd948 (Oct 21, 2026, Eastern). Release date verified against GitHub publication.",
       "changes": {
-        "Added": ["Independent Session and Weekly forecasts with labeled consumption rates."]
+        "Added": [
+          "Independent Session and Weekly forecasts with labeled consumption rates."
+        ]
       }
     },
     {
@@ -59,7 +67,9 @@
       "date": "2026-10-20",
       "source": "Implementation: ba25da3 (Oct 20, 2026, Eastern); 115b65a (Oct 20, 2026, Eastern); 9eba28c (Oct 20, 2026, Eastern). Release date verified against GitHub publication.",
       "changes": {
-        "Added": ["Automated unlisted Mozilla signing and an HTTPS Firefox update feed."],
+        "Added": [
+          "Automated unlisted Mozilla signing and an HTTPS Firefox update feed."
+        ],
         "Fixed": [
           "Keep Claude forecast samples and history graphs together despite subsecond reset timestamp jitter."
         ],
@@ -83,7 +93,9 @@
       "date": "2026-10-20",
       "source": "Implementation: 1a09a45 (Oct 20, 2026, Eastern); 55ac1d0 (Oct 20, 2026, Eastern); c1303b8 (Oct 20, 2026, Eastern). Release date verified against Mozilla review metadata.",
       "changes": {
-        "Added": ["Local reset dates and total hours remaining in popup quota rows."],
+        "Added": [
+          "Local reset dates and total hours remaining in popup quota rows."
+        ],
         "Changed": [
           "Use consistent forecast wording in the popup and Settings, with version labels derived from release metadata."
         ],
@@ -99,7 +111,9 @@
       "date": "2026-10-19",
       "source": "Mozilla review timestamp; project validation notes",
       "changes": {
-        "Changed": ["Use the shared Claude weekly allowance for the toolbar percentage."]
+        "Changed": [
+          "Use the shared Claude weekly allowance for the toolbar percentage."
+        ]
       }
     },
     {
@@ -107,7 +121,9 @@
       "date": "2026-10-19",
       "source": "Mozilla review timestamp; project validation notes",
       "changes": {
-        "Changed": ["Larger toolbar numerals and higher-contrast status backgrounds."]
+        "Changed": [
+          "Larger toolbar numerals and higher-contrast status backgrounds."
+        ]
       }
     },
     {
@@ -115,7 +131,9 @@
       "date": "2026-10-19",
       "source": "Mozilla review timestamp; project validation notes",
       "changes": {
-        "Added": ["Two numeric toolbar rows showing Claude above Codex."]
+        "Added": [
+          "Two numeric toolbar rows showing Claude above Codex."
+        ]
       }
     }
   ]
