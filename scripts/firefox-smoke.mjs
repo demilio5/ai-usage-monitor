@@ -6,7 +6,7 @@ import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const uuid = 'f08aae46-85f3-4c94-af1e-71222610fe17';
 const id = 'ai-usage-monitor@local.extension';
-const { version } = JSON.parse(await readFile('public/manifest.json', 'utf8'));
+const { version } = JSON.parse(await readFile('package.json', 'utf8'));
 const options = new firefox.Options()
   .addArguments('-headless')
   .setPreference('extensions.webextensions.uuids', JSON.stringify({ [id]: uuid }))
@@ -394,6 +394,86 @@ try {
       const s = await script((done) => browser.runtime.sendMessage({ type: 'read' }).then(done));
       return s.history.length === 0;
     }, 10000);
+  });
+  await run('header version opens synchronized history on desktop and mobile widths', async () => {
+    await driver.get(`moz-extension://${uuid}/popup.html`);
+    await driver.wait(until.elementLocated(By.css('.application-title .version-link')), 10000);
+    const title = await driver.executeScript(() => ({
+      title: document.querySelector('.application-title h1').textContent,
+      version: document.querySelector('.application-title h1').nextElementSibling.textContent,
+      runtime: browser.runtime.getManifest().version,
+    }));
+    assert.equal(title.title, 'AI Usage Monitor');
+    assert.equal(title.version, `v${version}`);
+    assert.equal(title.runtime, version);
+    const original = await driver.getWindowHandle();
+    await driver.findElement(By.css('.application-title .version-link')).click();
+    await driver.wait(async () => (await driver.getAllWindowHandles()).length > 1, 10000);
+    const opened = (await driver.getAllWindowHandles()).find((handle) => handle !== original);
+    await driver.switchTo().window(opened);
+    await driver.wait(until.elementLocated(By.css('.release-entry')), 10000);
+    const history = JSON.parse(await readFile('dist/version-history.json', 'utf8'));
+    const entries = await driver.executeScript(() =>
+      [...document.querySelectorAll('.release-entry h2')].map((node) => node.textContent),
+    );
+    assert.deepEqual(
+      entries,
+      history.releases.map((entry) => `v${entry.version}`),
+    );
+    assert.equal(entries[0], `v${version}`);
+    assert.equal(
+      await driver.executeScript(() => document.documentElement.scrollWidth <= innerWidth),
+      true,
+    );
+    await driver.manage().window().setRect({ width: 380, height: 900 });
+    // Desktop Firefox enforces a 500px minimum window. A same-origin iframe
+    // provides a real narrow layout viewport (including media queries).
+    await driver.executeScript(() => {
+      const frame = document.createElement('iframe');
+      frame.src = location.href;
+      frame.title = 'Mobile Version History test';
+      frame.style.cssText = 'width:380px;height:600px;border:0;display:block';
+      document.querySelector('#app').replaceChildren(frame);
+    });
+    const frame = await driver.findElement(By.css('iframe'));
+    await driver.switchTo().frame(frame);
+    await driver.wait(until.elementLocated(By.css('.release-entry')), 10000);
+    const mobile = await driver.executeScript(() => ({
+      width: innerWidth,
+      content: document.documentElement.scrollWidth,
+    }));
+    console.log('Version History mobile viewport', mobile);
+    assert.ok(mobile.width <= 420);
+    assert.ok(mobile.content <= mobile.width);
+    const headerFits = await driver.executeScript(() => {
+      const title = document.querySelector('.application-title').getBoundingClientRect();
+      return title.left >= 0 && title.right <= innerWidth;
+    });
+    assert.equal(headerFits, true);
+    await driver.executeScript(() => window.scrollTo(0, 0));
+    await driver.switchTo().defaultContent();
+    await writeFile(
+      'artifacts/firefox-version-history-mobile.png',
+      await frame.takeScreenshot(),
+      'base64',
+    );
+    await driver.get(`moz-extension://${uuid}/history.html`);
+    await driver.wait(until.elementLocated(By.css('.release-entry')), 10000);
+    await driver.manage().window().setRect({ width: 900, height: 1200 });
+    await writeFile(
+      'artifacts/firefox-version-history-desktop.png',
+      await driver.takeScreenshot(),
+      'base64',
+    );
+    await driver.findElement(By.css('.history-nav a')).click();
+    await driver.wait(until.elementLocated(By.css('#updates')), 10000);
+    assert.equal(
+      await driver.findElement(By.css('.application-title .version-link')).getText(),
+      `v${version}`,
+    );
+    await driver.close();
+    await driver.switchTo().window(original);
+    await driver.manage().window().setRect({ width: 620, height: 1500 });
   });
   await writeFile(
     'artifacts/firefox-smoke-results.json',

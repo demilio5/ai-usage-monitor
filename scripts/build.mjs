@@ -1,17 +1,28 @@
 import { build } from 'esbuild';
-import { cp, mkdir, rm, readFile } from 'node:fs/promises';
+import { cp, mkdir, rm, readFile, writeFile } from 'node:fs/promises';
+import { versionHistory } from './changelog.mjs';
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 const manifest = JSON.parse(await readFile('public/manifest.json', 'utf8'));
-if (manifest.version !== pkg.version)
-  throw new Error('package.json and public/manifest.json versions must match.');
+if ('version' in manifest)
+  throw new Error('The manifest is a template; keep the version only in package.json.');
+const history = versionHistory(JSON.parse(await readFile('CHANGELOG.json', 'utf8')), pkg.version);
+const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
+if (lock.version !== pkg.version || lock.packages[''].version !== pkg.version)
+  throw new Error('Package lock version must match package.json; use version:prepare.');
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await cp('public', 'dist', { recursive: true });
+await writeFile(
+  'dist/manifest.json',
+  JSON.stringify({ ...manifest, version: pkg.version }, null, 2) + '\n',
+);
+await writeFile('dist/version-history.json', JSON.stringify(history, null, 2) + '\n');
 await build({
   entryPoints: {
     background: 'src/background/index.ts',
     popup: 'src/popup/index.ts',
     options: 'src/options/index.ts',
+    history: 'src/version-history/index.ts',
   },
   outdir: 'dist',
   bundle: true,

@@ -69,7 +69,10 @@ Releases remain unlisted on Mozilla and are distributed through [GitHub releases
 On Windows, configure an existing Mozilla credential in Windows Credential Manager and your GitHub CLI path as described in [the signing guide](docs/SIGNING.md). No signing secret belongs in a file or this repository.
 
 - `npm run release:prepare` validates and builds without signing or publishing.
-- `npm run release:new` bumps the patch version, validates, signs through Mozilla with source attached, and publishes the signed XPI and update feed.
+- Record changes in `CHANGELOG.json` under `unreleased` (Added, Changed, Fixed, Removed). The header version opens the local Version History page built from that same file.
+- `package.json` owns the version; build generates the Firefox manifest and bundled history. Never manually version the manifest template.
+- When preparing a release, run `npm run version:prepare -- patch` (fixes), `-- minor` (features/improvements), or `-- major` (breaking changes). Review and commit the resulting metadata/changelog. No automatic version bump occurs on edits or commits.
+- `npm run release:new -- -ReleaseType minor` remains a combined explicit release command; its default is `patch` and it requires Unreleased notes.
 - `npm run release` releases the current version or resumes a pending release without bumping again.
 
 Install the signed update-enabled version once. Subsequent higher versions are delivered through Firefox's updater; the extension retains its existing ID. See [validation](docs/VALIDATION.md) for live-account and OS acceptance checks.

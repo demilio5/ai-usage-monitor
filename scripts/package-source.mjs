@@ -19,6 +19,8 @@ for (const name of [
   'vitest.config.ts',
   '.prettierrc.json',
   'README.md',
+  'CHANGELOG.json',
+  'AGENTS.md',
   'LICENSE',
   'THIRD_PARTY_NOTICES.md',
   'PRIVACY.md',

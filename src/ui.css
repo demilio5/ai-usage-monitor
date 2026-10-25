@@ -44,6 +44,41 @@
 * {
   box-sizing: border-box;
 }
+.application-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.application-title h1 {
+  min-width: 0;
+}
+.version-link {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.history-nav {
+  margin: 16px 0;
+}
+.release-heading {
+  flex-wrap: wrap;
+}
+.version-history li {
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+.version-history ul {
+  padding-left: 22px;
+}
+.history-source {
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+}
 body {
   margin: 0;
   background: var(--bg);

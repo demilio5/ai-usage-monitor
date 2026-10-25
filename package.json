@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "version:prepare": "node scripts/prepare-version.mjs",
     "release": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/release-extension.ps1",
     "release:new": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/release-extension.ps1 -Bump",
     "release:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/release-extension.ps1 -PrepareOnly",

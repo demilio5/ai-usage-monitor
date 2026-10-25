@@ -1,0 +1,122 @@
+{
+  "unreleased": {
+    "Added": [
+      "Clickable header version and a local Version History page backed by this changelog.",
+      "Release preparation supports patch, minor and major versions with synchronization checks."
+    ],
+    "Changed": [
+      "Package metadata is the authoritative version; builds generate the Firefox manifest and history data.",
+      "Expand older dashboard entries with verified Git commit references and Eastern implementation dates."
+    ]
+  },
+  "releases": [
+    {
+      "version": "1.0.11",
+      "date": "2026-10-22",
+      "source": "Implementation: 5783f5a (Oct 22, 2026, Eastern). Release date verified against GitHub publication.",
+      "changes": {
+        "Changed": [
+          "Show the estimated weekly exhaustion date instead of Over budget, with the full local date and time on hover."
+        ]
+      }
+    },
+    {
+      "version": "1.0.10",
+      "date": "2026-10-22",
+      "source": "Implementation: 6db2639 (Oct 22, 2026, Eastern); c7526ce (Oct 22, 2026, Eastern). Release date verified against GitHub publication.",
+      "changes": {
+        "Added": [
+          "Show when an allowance is likely to reset before exhaustion, alongside the observed consumption rate.",
+          "Show weekly usage pace compared with the remaining budget until reset.",
+          "Explain missing forecasts with reading counts, sample-span requirements and stale-data messages.",
+          "Show the last successful refresh and a Retry action on stale service cards.",
+          "Display installed-version and update information with release notes in Settings."
+        ]
+      }
+    },
+    {
+      "version": "1.0.9",
+      "date": "2026-10-21",
+      "source": "Implementation: d7bd948 (Oct 21, 2026, Eastern). Release date verified against GitHub publication.",
+      "changes": {
+        "Added": ["Independent Session and Weekly forecasts with labeled consumption rates."]
+      }
+    },
+    {
+      "version": "1.0.8",
+      "date": "2026-10-20",
+      "source": "Implementation: c688dec (Oct 20, 2026, Eastern). Release date verified against GitHub publication.",
+      "changes": {
+        "Changed": [
+          "Align quota columns and emphasize percentage readings with larger numerals.",
+          "Make reset dates and countdowns easier to read, with distinct forecast summaries and connection indicators.",
+          "Place Refresh and Settings together in the header; refine light and dark themes and adapt spacing when all services are enabled."
+        ]
+      }
+    },
+    {
+      "version": "1.0.7",
+      "date": "2026-10-20",
+      "source": "Implementation: ba25da3 (Oct 20, 2026, Eastern); 115b65a (Oct 20, 2026, Eastern); 9eba28c (Oct 20, 2026, Eastern). Release date verified against GitHub publication.",
+      "changes": {
+        "Added": ["Automated unlisted Mozilla signing and an HTTPS Firefox update feed."],
+        "Fixed": [
+          "Keep Claude forecast samples and history graphs together despite subsecond reset timestamp jitter."
+        ],
+        "Changed": [
+          "Widen the popup to 520px, enlarge text and reset information, and improve secondary-text contrast while retaining a no-scroll overview."
+        ]
+      }
+    },
+    {
+      "version": "1.0.6",
+      "date": "2026-10-20",
+      "source": "Implementation: a8f63bb (Oct 20, 2026, Eastern). Release date verified against Mozilla review metadata.",
+      "changes": {
+        "Fixed": [
+          "Reuse the previously tracked Claude organization when multiple memberships are returned and it remains available."
+        ]
+      }
+    },
+    {
+      "version": "1.0.5",
+      "date": "2026-10-20",
+      "source": "Implementation: 1a09a45 (Oct 20, 2026, Eastern); 55ac1d0 (Oct 20, 2026, Eastern); c1303b8 (Oct 20, 2026, Eastern). Release date verified against Mozilla review metadata.",
+      "changes": {
+        "Added": ["Local reset dates and total hours remaining in popup quota rows."],
+        "Changed": [
+          "Use consistent forecast wording in the popup and Settings, with version labels derived from release metadata."
+        ],
+        "Fixed": [
+          "Keep current weekly readings usable when a shorter allowance has expired; suppress forecasts for stale readings.",
+          "Support hourly idle samples and valid manual samples with long automatic intervals.",
+          "Show an exhausted allowance directly instead of waiting for a consumption trend."
+        ]
+      }
+    },
+    {
+      "version": "1.0.4",
+      "date": "2026-10-19",
+      "source": "Mozilla review timestamp; project validation notes",
+      "changes": {
+        "Changed": ["Use the shared Claude weekly allowance for the toolbar percentage."]
+      }
+    },
+    {
+      "version": "1.0.3",
+      "date": "2026-10-19",
+      "source": "Mozilla review timestamp; project validation notes",
+      "changes": {
+        "Changed": ["Larger toolbar numerals and higher-contrast status backgrounds."]
+      }
+    },
+    {
+      "version": "1.0.2",
+      "date": "2026-10-19",
+      "source": "Mozilla review timestamp; project validation notes",
+      "changes": {
+        "Added": ["Two numeric toolbar rows showing Claude above Codex."]
+      }
+    }
+  ]
+}

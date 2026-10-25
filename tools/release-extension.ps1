@@ -1,4 +1,4 @@
-param([switch]$Bump, [switch]$PrepareOnly, [string]$CredentialTarget, [string]$GitHubCli)
+param([switch]$Bump, [ValidateSet('patch', 'minor', 'major')][string]$ReleaseType = 'patch', [switch]$PrepareOnly, [string]$CredentialTarget, [string]$GitHubCli)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location -LiteralPath $root
@@ -21,13 +21,13 @@ if (-not $PrepareOnly) {
   if ($LASTEXITCODE -ne 0 -or $dirty) { throw 'Commit source changes before releasing.' }
   Run-Checked $GitHubCli @('api', 'user', '--jq', '.login')
 }
-if ($Bump) { Run-Checked 'node' @('scripts/bump-release.mjs') }
+if ($Bump) { Run-Checked 'node' @('scripts/prepare-version.mjs', $ReleaseType) }
 Run-Checked 'npm.cmd' @('run', 'check')
 Run-Checked 'npm.cmd' @('run', 'package')
 Run-Checked 'npm.cmd' @('run', 'package:source')
 if ($PrepareOnly) { Write-Host 'Release preparation passed; nothing was signed or published.'; exit 0 }
 if ($Bump) {
-  Run-Checked 'git' @('add', 'package.json', 'package-lock.json', 'public/manifest.json')
+  Run-Checked 'git' @('add', 'package.json', 'package-lock.json', 'CHANGELOG.json')
   $version = (Get-Content 'package.json' -Raw | ConvertFrom-Json).version
   Run-Checked 'git' @('commit', '-m', "release: prepare $version")
 }

@@ -1,5 +1,6 @@
 import { PROVIDERS, NAMES, type Store } from '../providers/types';
 import { el, button, theme } from '../ui/dom';
+import { applicationTitle } from '../ui/version';
 import { color, current } from '../calculations/quota';
 import { stale } from '../background/scheduler';
 import { age, resetDisplay } from '../utils/time';
@@ -20,7 +21,7 @@ function render() {
   app.replaceChildren();
   const header = el('header', 'spread popup-header');
   const brand = el('div', 'brand');
-  brand.append(el('h1', '', 'AI Usage Monitor'));
+  brand.append(applicationTitle());
   brand.append(el('span', 'local', '● Local only'));
   const settings = button('⚙', () => browser.runtime.openOptionsPage(), 'icon-button');
   settings.setAttribute('aria-label', 'Open settings');

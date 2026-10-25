@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { updateFeed, verifySignedXpi } from './release-utils.mjs';
+import { versionHistory, releaseNotes } from './changelog.mjs';
 
 const gh = process.env.AI_USAGE_GH_PATH || 'gh';
 function command(exe, args, allowFailure = false) {
@@ -78,7 +79,8 @@ try {
     if (!bytes.equals(published))
       throw new Error('An existing GitHub release contains a different XPI; bump the version.');
   } else {
-    const notes = `AI Usage Monitor ${version}. Signed by Mozilla for unlisted distribution. Replaces the weekly Over budget label with the estimated local exhaustion date. Hover for the full date, time and timezone. On track remains when the allowance should last until reset.\n`;
+    const history = versionHistory(JSON.parse(await readFile('CHANGELOG.json', 'utf8')), version);
+    const notes = releaseNotes(history.releases[0]);
     await writeFile('artifacts/release-notes.md', notes);
     api(
       'release',

@@ -23,11 +23,12 @@ Run from a clean, committed checkout on the default branch:
 
 ```powershell
 npm run release:prepare # Validate and build only; no credential access or publication.
-npm run release:new     # Bump the patch version, validate, sign, and publish.
+npm run version:prepare -- minor # Explicitly prepare features/improvements; review and commit these files.
+npm run release         # Validate, sign, and publish the reviewed prepared version.
 npm run release         # Current version or resume; do not bump a pending release.
 ```
 
-Equivalent: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/release-extension.ps1 -Bump`.
+Use `patch` for fixes, `minor` for features/improvements, and `major` for breaking changes. Preparation moves `CHANGELOG.json` Unreleased notes into a dated entry and synchronizes package/lock metadata; it does not sign, publish, or commit. `npm run release:new -- -ReleaseType minor` remains an explicit combined preparation/signing command (default `patch`), and requires Unreleased notes. Do not edit the manifest template to set a version: build generates it from `package.json`.
 
 The command creates distribution and original source ZIPs, submits an unlisted version with source and reviewer notes to Mozilla API v5, waits up to 15 minutes, and downloads the approved XPI. It checks Mozilla's SHA-256, manifest identity/version/update URL, signature-file presence, and every original package file. Firefox verifies the cryptographic signature during installation. The signing code uses Node built-ins and the existing archive library, with no additional dependency.
 

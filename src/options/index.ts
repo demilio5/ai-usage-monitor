@@ -1,4 +1,5 @@
 import { chart } from '../ui/chart';
+import { applicationTitle, versionLink } from '../ui/version';
 import { forecast, forecastText, weeklyPace, forecastDate } from '../calculations/forecasting';
 import { stale } from '../background/scheduler';
 import { current } from '../calculations/quota';
@@ -40,7 +41,7 @@ function render() {
   theme(state.settings.theme);
   app.replaceChildren();
   app.append(
-    el('div', 'eyebrow', 'AI USAGE MONITOR'),
+    applicationTitle(),
     el('h1', '', 'Make it yours'),
     el('p', 'muted', 'Subscription quotas, stored only in this Firefox profile.'),
   );
@@ -397,6 +398,7 @@ function render() {
   releaseNotes.target = '_blank';
   releaseNotes.rel = 'noopener noreferrer';
   updates.append(releaseNotes);
+  updates.append(el('span', '', ' · '), versionLink());
   app.append(updates);
   if (location.hash)
     requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
