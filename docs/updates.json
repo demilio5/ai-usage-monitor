@@ -3,9 +3,9 @@
     "ai-usage-monitor@local.extension": {
       "updates": [
         {
-          "version": "1.0.11",
-          "update_link": "https://github.com/demilio5/ai-usage-monitor/releases/download/v1.0.11/ai-usage-monitor-1.0.11.xpi",
-          "update_hash": "sha256:04feea5c4829642748685449b94ccf4aaac6f564383fbd381ff47a12dba5c7f2",
+          "version": "1.1.0",
+          "update_link": "https://github.com/demilio5/ai-usage-monitor/releases/download/v1.1.0/ai-usage-monitor-1.1.0.xpi",
+          "update_hash": "sha256:3032e352b4ce103e6467c37c1960c5ef15e65d8d17d71340db964aba38ce12b7",
           "applications": {
             "gecko": {
               "strict_min_version": "142.0"
