@@ -21,7 +21,12 @@ export function selectQuota(
     return stale(p, settings, now)
       ? []
       : p.quotas
-          .filter((q) => current(q, now) && (id !== 'claude' || q.id === 'seven_day'))
+          .filter(
+            (q) =>
+              current(q, now) &&
+              (id !== 'claude' || q.id === 'seven_day') &&
+              (id !== 'codex' || q.durationMs === 604800000),
+          )
           .map((q) => ({ p, q }));
   });
   return candidates.sort((a, b) => a.q.remaining - b.q.remaining)[0] || null;
@@ -37,7 +42,7 @@ export function badge(providers: ProviderState, settings: Settings, now = Date.n
 export function tooltip(providers: ProviderState, settings: Settings, now = Date.now()): string {
   return [
     settings.dualIcon
-      ? `AI Usage Monitor · ${settings.display} % · Claude = top row (weekly), Codex = bottom row`
+      ? `AI Usage Monitor · weekly ${settings.display} % · Claude = top row, Codex = bottom row`
       : 'AI Usage Monitor',
     ...PROVIDERS.map((id) => {
       const p = providers[id];

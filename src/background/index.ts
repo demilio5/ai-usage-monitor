@@ -52,7 +52,11 @@ async function collect(
   if (!manual && now < idleEligibleAt(old.lastAttempt, s.settings.interval, isIdle)) return old;
   const earliestManual =
     old.status === 'rate-limit' ? old.nextAttempt : (old.lastAttempt ?? 0) + 60000;
-  if (now < (manual ? earliestManual : old.nextAttempt)) return old;
+  const scheduled =
+    id === 'codex' && old.status === 'auth'
+      ? Math.min(old.nextAttempt, (old.lastAttempt ?? 0) + s.settings.interval * 60000)
+      : old.nextAttempt;
+  if (now < (manual ? earliestManual : scheduled)) return old;
   try {
     if (!navigator.onLine) throw new ProviderError('offline', 'Firefox is offline.');
     const origin = id === 'claude' ? 'https://claude.ai/*' : 'https://chatgpt.com/*';
@@ -87,13 +91,11 @@ async function collect(
       lastAttempt: now,
       failures: old.failures + 1,
       rateLimitedUntil: err.status === 'rate-limit' ? err.retryAt : old.rateLimitedUntil,
-      nextAttempt: nextRetry(
-        err.status,
-        old.failures + 1,
-        Date.now(),
-        s.settings.interval,
-        err.retryAt,
-      ),
+      // A renewed ChatGPT sign-in should restore Codex at the next normal poll.
+      nextAttempt:
+        id === 'codex' && err.status === 'auth'
+          ? Date.now() + s.settings.interval * 60000
+          : nextRetry(err.status, old.failures + 1, Date.now(), s.settings.interval, err.retryAt),
     };
   }
 }

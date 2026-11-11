@@ -227,11 +227,17 @@ it('selects both toolbar values independently and marks stale or disabled provid
   s.providers.codex = {
     ...s.providers.claude,
     provider: 'codex',
-    quotas: [{ ...q, remaining: 38, used: 62 }],
+    quotas: [
+      { ...q, id: 'primary_window', durationMs: 18000000, remaining: 0, used: 100 },
+      { ...q, id: 'secondary_window', durationMs: 604800000, remaining: 38, used: 62 },
+    ],
   };
   expect(toolbarRows(s.providers, s.settings, now).map((r) => r.text)).toEqual(['60', '38']);
+  expect(badge(s.providers, s.settings, now).text).toBe('38%');
   s.settings.display = 'used';
   expect(toolbarRows(s.providers, s.settings, now).map((r) => r.text)).toEqual(['40', '62']);
+  s.providers.codex.quotas.pop();
+  expect(toolbarRows(s.providers, s.settings, now)[1].text).toBe('-');
   s.providers.claude.status = 'auth';
   s.settings.enabled.codex = false;
   expect(toolbarRows(s.providers, s.settings, now).map((r) => r.text)).toEqual(['-', '-']);

@@ -145,7 +145,13 @@ function render() {
                 state.settings.interval,
                 state.settings.idleAware,
               );
-        const line = el('p', 'compact-detail muted', forecastText(f));
+        const line = el(
+          'p',
+          'compact-detail muted',
+          id === 'codex' && p.status === 'auth'
+            ? 'Last known readings · Sign in at chatgpt.com to refresh'
+            : forecastText(f),
+        );
         const pace = weeklyPace(target, f);
         if (pace) {
           const estimate = pace.label === 'Over budget' ? forecastDate(f) : null;

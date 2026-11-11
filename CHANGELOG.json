@@ -2,6 +2,17 @@
   "unreleased": {},
   "releases": [
     {
+      "version": "1.1.1",
+      "date": "2026-11-10",
+      "source": "Release preparation date (US Eastern)",
+      "changes": {
+        "Fixed": [
+          "Show the Codex weekly allowance in the toolbar.",
+          "Resume Codex quota refreshes on the normal schedule after signing in to ChatGPT and show sign-in guidance beside stale readings."
+        ]
+      }
+    },
+    {
       "version": "1.1.0",
       "date": "2026-10-25",
       "source": "Release preparation date (US Eastern)",

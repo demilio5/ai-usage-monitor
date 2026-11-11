@@ -93,6 +93,20 @@ it('throttles popup and manual refresh immediately after collection', async () =
   await Promise.all([send('popup'), send('refresh'), send('refresh')]);
   expect(fetcher).toHaveBeenCalledTimes(calls);
 });
+it('resumes Codex after sign-in at the normal interval despite stored auth backoff', async () => {
+  saved!.providers.codex.nextAttempt = now + 6 * 3600000;
+  vi.setSystemTime(now + 5 * 60000);
+  fetcher
+    .mockResolvedValueOnce(response([{ uuid: 'fixture-org' }]))
+    .mockResolvedValueOnce(response({ accessToken: 'fixture-session' }))
+    .mockResolvedValueOnce(response({ seven_day: { utilization: 28 } }))
+    .mockResolvedValueOnce(
+      response({ rate_limit: { primary_window: { used_percent: 31, limit_window_seconds: 604800 } } }),
+    );
+  const s = await send('popup');
+  expect(s.providers.codex.status).toBe('ok');
+  expect(s.providers.codex.quotas[0].remaining).toBe(69);
+});
 it('preserves last-good readings on network failure and grays the badge', async () => {
   vi.setSystemTime(now + 60000);
   fetcher.mockRejectedValue(new Error('sensitive data'));

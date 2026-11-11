@@ -151,7 +151,7 @@ function render() {
     el(
       'p',
       'muted',
-      'Two large numeric rows show both percentages: Claude’s shared weekly allowance is on top, Codex below. Background colors indicate remaining allowance. Codex shows its most constrained current quota; a dash means unavailable. The standard badge is hidden in this mode. Turn this off to use one larger badge.',
+      'Two large numeric rows show weekly percentages, with Claude on top and Codex below. Background colors indicate remaining allowance. A dash means unavailable. Turn this off to use one larger badge.',
     ),
   );
   form.append(display);
