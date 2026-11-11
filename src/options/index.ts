@@ -397,8 +397,18 @@ function render() {
   releaseNotes.href = `https://github.com/demilio5/ai-usage-monitor/releases/tag/v${manifest.version}`;
   releaseNotes.target = '_blank';
   releaseNotes.rel = 'noopener noreferrer';
-  updates.append(releaseNotes);
-  updates.append(el('span', '', ' · '), versionLink());
+  const developerDashboard = el('a', '', 'Mozilla developer dashboard ↗');
+  developerDashboard.href =
+    'https://addons.mozilla.org/en-US/developers/addon/64d9e49aecb24c479ea6/edit';
+  developerDashboard.target = '_blank';
+  developerDashboard.rel = 'noopener noreferrer';
+  updates.append(
+    releaseNotes,
+    el('span', '', ' · '),
+    versionLink(),
+    el('span', '', ' · '),
+    developerDashboard,
+  );
   app.append(updates);
   if (location.hash)
     requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
